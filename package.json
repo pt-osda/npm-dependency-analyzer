@@ -1,0 +1,41 @@
+{
+  "name": "npm-dependency-analyzer",
+  "version": "0.0.2",
+  "description": "Plugin to validate dependencies, concerning their license and vulnerabities",
+  "main": "index.js",
+  "bin": {
+    "npm-dependency-analyzer": "./bin/npm-dependency-analyzer.js"
+  },
+  "scripts": {
+    "build": "npm install && npm run lint && npm run test",
+    "lint": "eslint . --fix",
+    "clean": "cd test/ && del *.txt",
+    "pretest": "npm run clean",
+    "test": "mocha"
+  },
+  "engines": {
+    "node": ">=4.0.0",
+    "npm": ">=2.0.0"
+  },
+  "keywords": [
+    "CLI",
+    "vulnerabilities",
+    "licenses",
+    "npm",
+    "build-plugin"
+  ],
+  "dependencies": {
+    "commander": "^2.15.1",
+    "nsp": "3.2.1",
+    "yargs": "11.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.0",
+    "mocha": "^5.0.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RuiDTLima/OSDA-Open-Source-Dependencies-Analysis.git"
+  },
+  "license": "BSD-3-Clause"
+}
