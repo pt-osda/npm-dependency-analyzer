@@ -7,6 +7,7 @@
     "npm-dependency-analyzer": "./bin/npm-dependency-analyzer.js"
   },
   "scripts": {
+    "testy": "npm-dependency-analyzer",
     "build": "npm install && npm run lint && npm run test",
     "lint": "eslint . --fix",
     "clean": "cd test/ && del *.txt",

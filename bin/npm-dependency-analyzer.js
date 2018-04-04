@@ -7,13 +7,19 @@
 
 
 
-const io = require('../lib/index')
+const lib = require('../lib/index')
 const fs = require('fs')
-
-const packageContent = io.readPackage()
-
-console.log(packageContent)
 
 if(!fs.existsSync('./build'))
 	fs.mkdirSync('./build')
-io.writePackage('./build/testFileWrite.txt', packageContent)
+
+lib.getDependencyGraph("--production", writeFile)
+
+lib.getDependencyGraph("--development", writeFile)
+
+
+function writeFile(fileName, data){
+    const fileDescriptor = fs.openSync('build/'+fileName, 'w')
+	fs.writeFileSync(fileDescriptor, data, 'utf-8')
+	fs.closeSync(fileDescriptor)
+}
