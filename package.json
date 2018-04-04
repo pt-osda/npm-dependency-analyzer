@@ -1,6 +1,6 @@
 {
   "name": "npm-dependency-analyzer",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Plugin to validate dependencies, concerning their license and vulnerabities",
   "main": "index.js",
   "bin": {
@@ -27,6 +27,8 @@
   ],
   "dependencies": {
     "commander": "^2.15.1",
+    "executive": "^1.5.13",
+    "npm": "^5.8.0",
     "nsp": "3.2.1",
     "yargs": "11.0.0"
   },

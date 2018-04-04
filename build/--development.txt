@@ -1,6 +1,6 @@
 {
   "name": "npm-dependency-analyzer",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "dependencies": {
     "eslint": {
       "version": "4.19.1",
@@ -66,19 +66,19 @@
                   "dependencies": {
                     "ansi-regex": {
                       "version": "2.1.1",
-                      "from": "ansi-regex@2.1.1",
+                      "from": "ansi-regex@^2.0.0",
                       "resolved": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-2.1.1.tgz"
                     }
                   }
                 },
                 "strip-ansi": {
                   "version": "3.0.1",
-                  "from": "strip-ansi@3.0.1",
+                  "from": "strip-ansi@^3.0.0",
                   "resolved": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-3.0.1.tgz",
                   "dependencies": {
                     "ansi-regex": {
                       "version": "2.1.1",
-                      "from": "ansi-regex@2.1.1",
+                      "from": "ansi-regex@^2.0.0",
                       "resolved": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-2.1.1.tgz"
                     }
                   }
