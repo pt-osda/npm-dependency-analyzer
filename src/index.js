@@ -10,6 +10,8 @@ const licenses = require('./utils/licenses')
 const vulnerabilities = require('./utils/vulnerabilities')
 const {openSync, writeFileSync, closeSync } = require('fs')
 
+const debug = require('debug')('Dependencies')
+
 const commands = {
 	'--production': 'npm la --json --prod', //Display only the dependency tree for packages in dependencies.
 	'--development': 'npm la --json --dev'  //Display only the dependency tree for packages in devDependencies.
@@ -18,36 +20,35 @@ const commands = {
 const defaultCommand = 'npm la --json'
 
 function checkProject(command){
+	debug('Getting all dependencies')
 	if(command == null){
-		console.log('[ GET DEPENDENCIES ]: Executing command for all dependencies')
 		getDependencyGraph(defaultCommand)
 		return
 	}
 
 	const commandString = commands[command]
 	if(commandString == null){
-		console.log(`Invalid command received: ${command}. \n Commands available: \n\t--production \n\t--development`)
+		debug(`Invalid command received: ${command}. \n Commands available: \n\t--production \n\t--development`)
 		throw new Error('Invalid arguments')
 	}
 
-	console.log(`[ GET DEPENDENCIES ]: Executing command: ${command}`)
 	getDependencyGraph(commandString)
 	
 }
 
 function getDependencyGraph(commandString){
-	console.log(commandString)
-	exec.quiet(commandString, 
-		(error, stdout, stderr) => {
-			if(error){
-				throw new Error(stderr)
+	debug('Executing command: "%s"', commandString)
+	exec.quiet(commandString)
+		.then(result => {
+			if(result.error){
+				throw new Error(result.stderr)
 			}
-			if(stdout === ''){
+			if(result.stdout === ''){
 				throw new Error('Invalid command')
 			}
 			
-			writeFile('dependencies.txt', stdout)
-			licenses()
+			writeFile('dependencies.json', result.stdout)
+			licenses(JSON.parse(result.stdout))
 			vulnerabilities()
 		})
 }

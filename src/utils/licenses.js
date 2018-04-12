@@ -1,30 +1,32 @@
+'use strict'
 
 module.exports = getLicences
 
 const async = require('async')
-const fs = require('fs')
+const {openSync,writeFileSync,closeSync} = require('fs')
 
-const objToWrite = {}
+const debug = require('debug')('Licenses')
 
-function getLicences(){
-	console.log('Starting to get licenses')
-
-	const {dependencies} = JSON.parse( fs.readFileSync('build/dependencies.txt','UTF-8') )
+function getLicences({dependencies}){
+	debug('Checking Licenses')
 	const keyQuantity = Object.keys(dependencies).length
 	let count = 0
+	const objToWrite = {}
+
 	async.forEachOf(dependencies, (value) => {
 		objToWrite[value.name] = value.license
+
 		if(++count == keyQuantity){
-			writeFile('licenses.txt', JSON.stringify(objToWrite) )
-			console.log('Licenses checked with success')
+			writeFile('licenses.json', JSON.stringify(objToWrite) )
+			debug('Licenses checked with success')
 		}
 	}, (error) => {
-		console.log(`License check failed: \n\t ${error}`)
+		debug('License check failed: \n\t%0', error)
 	})
 }
 
 function writeFile(fileName, data){
-	const fileDescriptor = fs.openSync('build/'+fileName, 'w')
-	fs.writeFileSync(fileDescriptor, data, 'utf-8')
-	fs.closeSync(fileDescriptor)
+	const fileDescriptor = openSync('build/'+fileName, 'w')
+	writeFileSync(fileDescriptor, data, 'utf-8')
+	closeSync(fileDescriptor)
 }

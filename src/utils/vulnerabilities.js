@@ -3,27 +3,29 @@
 module.exports = getVulnerabilities
 
 const exec  = require('executive')
-const fs = require('fs')
+const {openSync,writeFileSync,closeSync} = require('fs')
+
+const debug = require('debug')('Vulnerabilities')
 
 
 function getVulnerabilities(){
-	console.log('Starting to check vulnerabilities')
+	debug('Checking Vulnerabilities')
 
-	exec.quiet('nsp check --reporter json',
-		(error, stdout, stderr) => {
-			if(error){
-				console.log('Error: '+error)
-				console.log('Standard Error: '+stderr)
+	exec.quiet('nsp check --reporter json')
+		.then(result => {
+			if(result.error){
+				debug('Error: %0'+result.error)
+				debug('Standard Error: %s'+result.stderr)
 			}
 
-			console.log('Vulnerabilities checked with success')
-			writeFile('vulnerabilities', stdout)
+			debug('Vulnerabilities checked with success')
+			writeFile('vulnerabilities.json', result.stdout)
 		})
 		
 }
 
 function writeFile(fileName, data){
-	const fileDescriptor = fs.openSync('build/'+fileName+'.txt', 'w')
-	fs.writeFileSync(fileDescriptor, data, 'utf-8')
-	fs.closeSync(fileDescriptor)
+	const fileDescriptor = openSync('build/'+fileName, 'w')
+	writeFileSync(fileDescriptor, data, 'utf-8')
+	closeSync(fileDescriptor)
 }
