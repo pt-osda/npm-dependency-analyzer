@@ -3,6 +3,7 @@
 
 [![npm](https://img.shields.io/npm/v/npm-dependency-analyzer.svg)](https://www.npmjs.com/package/npm-dependency-analyzer)
 [![license](https://img.shields.io/github/license/pt-osda/npm-dependency-analyzer.svg)](https://github.com/PsychoSnake/MarkdownTest/blob/master/LICENSE)
+[![Dependency Status](https://img.shields.io/david/pt-osda/npm-dependency-analyzer.svg)](https://david-dm.org/pt-osda/npm-dependency-analyzer.svg)
 
 Analyze Open Source dependencies in a project developed on a Node.js environment. This plugin analyzes all dependencies of a project to check for vulnerabilities and licenses.
 

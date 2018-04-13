@@ -7,6 +7,10 @@ const {openSync,writeFileSync,closeSync} = require('fs')
 
 const debug = require('debug')('Licenses')
 
+/**
+ * Gets the licenses from each dependency
+ * @param {Object} param0 object with information about all dependencies in the current project
+ */
 function getLicences({dependencies}){
 	debug('Checking Licenses')
 	const keyQuantity = Object.keys(dependencies).length
@@ -22,6 +26,7 @@ function getLicences({dependencies}){
 		}
 	}, (error) => {
 		debug('License check failed: \n\t%0', error)
+		throw new Error(error)
 	})
 }
 

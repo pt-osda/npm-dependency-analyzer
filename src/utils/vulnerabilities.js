@@ -7,7 +7,9 @@ const {openSync,writeFileSync,closeSync} = require('fs')
 
 const debug = require('debug')('Vulnerabilities')
 
-
+/**
+ * Gets all vulnerabilities on the current project
+ */
 function getVulnerabilities(){
 	debug('Checking Vulnerabilities')
 

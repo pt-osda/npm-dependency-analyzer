@@ -19,10 +19,19 @@ const commands = {
 
 const defaultCommand = 'npm la --json'
 
+/**
+ * Analyzes license and vulnerabilities from all dependencies 
+ * @param {String} command npm CLI command to execute. values can be "--production" and --development or undefined
+ */
 function checkProject(command){
 	debug('Getting all dependencies')
+
+	function dependencyCb(dependencies) {
+		licenses(dependencies)
+		vulnerabilities()
+	}
 	if(command == null){
-		getDependencyGraph(defaultCommand)
+		getDependencyGraph(defaultCommand, dependencyCb)
 		return
 	}
 
@@ -32,11 +41,16 @@ function checkProject(command){
 		throw new Error('Invalid arguments')
 	}
 
-	getDependencyGraph(commandString)
+	getDependencyGraph(commandString, dependencyCb)
 	
 }
 
-function getDependencyGraph(commandString){
+/**
+ * Gets all dependencies of the current project and writes them to a file
+ * @param {String} commandString npm CLI command to execute
+ * @param {Function} cb callback to return all dependencies
+ */
+function getDependencyGraph(commandString, cb){
 	debug('Executing command: "%s"', commandString)
 	exec.quiet(commandString)
 		.then(result => {
@@ -48,8 +62,7 @@ function getDependencyGraph(commandString){
 			}
 			
 			writeFile('dependencies.json', result.stdout)
-			licenses(JSON.parse(result.stdout))
-			vulnerabilities()
+			cb(JSON.parse(result.stdout))
 		})
 }
 
