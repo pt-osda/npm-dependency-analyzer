@@ -10,7 +10,7 @@ const debug = require('debug')('Vulnerabilities')
 /**
  * Gets all vulnerabilities on the current project
  */
-function getVulnerabilities(){
+function getVulnerabilities(cb){
 	debug('Checking Vulnerabilities')
 
 	exec.quiet('nsp check --reporter json')
@@ -22,6 +22,10 @@ function getVulnerabilities(){
 
 			debug('Vulnerabilities checked with success')
 			writeFile('vulnerabilities.json', result.stdout)
+			if(result.stdout === '')
+				cb([])
+			else
+				cb(JSON.parse(result.stdout))
 		})
 		
 }

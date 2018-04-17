@@ -8,6 +8,7 @@ module.exports = {
 const exec = require('executive')
 const licenses = require('./utils/licenses')
 const vulnerabilities = require('./utils/vulnerabilities')
+const reportClass = require('./report_model')
 const {openSync, writeFileSync, closeSync } = require('fs')
 
 const debug = require('debug')('Dependencies')
@@ -28,7 +29,8 @@ function checkProject(command){
 
 	function dependencyCb(dependencies) {
 		licenses(dependencies)
-		vulnerabilities()
+
+		vulnerabilities( vulnerabilities => generateReport(dependencies, vulnerabilities) )
 	}
 	if(command == null){
 		getDependencyGraph(defaultCommand, dependencyCb)
@@ -45,6 +47,33 @@ function checkProject(command){
 	
 }
 
+function generateReport(dependencies, vulnerabilities) {
+
+	const report = new reportClass.Report('tag', dependencies.version, dependencies.name, dependencies.description)
+
+	for(let dependency in dependencies['dependencies']){
+		const currentDependency = dependencies['dependencies'][dependency]
+		const dep = new reportClass.Dependency(currentDependency.name, '', currentDependency.license)
+		
+		const vul = vulnerabilities.find(obj => {
+			obj.module == dep.name
+		})
+			
+		if(vul){
+			dep.vulnerabilities.push(
+				new reportClass.Vulnerability(
+					vul.title,vul.module, vul.overview, vul.recommendation,
+					vul.advisory, vul.cvss_score, vul.vulnerable_versions
+				)
+			)
+		}
+		console.log('HELLO: ' + JSON.stringify(dep))
+		report.dependencies.push(dep)
+	}
+
+	writeFile('report.json', JSON.stringify(report))
+}
+
 /**
  * Gets all dependencies of the current project and writes them to a file
  * @param {String} commandString npm CLI command to execute
@@ -52,7 +81,7 @@ function checkProject(command){
  */
 function getDependencyGraph(commandString, cb){
 	debug('Executing command: "%s"', commandString)
-	exec.quiet(commandString)
+	exec.quiet('npm la --json')
 		.then(result => {
 			if(result.error){
 				throw new Error(result.stderr)

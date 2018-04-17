@@ -13,7 +13,7 @@
     "test": "DEBUG=* node ./bin/npm-dependency-analyzer.js"
   },
   "engines": {
-    "node": ">=4.0.0",
+    "node": ">=8.0.0",
     "npm": ">=2.0.0"
   },
   "keywords": [
@@ -24,7 +24,6 @@
     "build-plugin"
   ],
   "dependencies": {
-    "async": "^2.6.0",
     "auditjs": "^2.4.3",
     "commander": "^2.15.1",
     "debug": "^3.1.0",

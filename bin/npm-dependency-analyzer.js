@@ -8,9 +8,18 @@
  */
 
 const index = require('../src/index')
-const { existsSync, mkdirSync } = require('fs')
+const { exists, mkdir } = require('fs')
 
-if(!existsSync('./build')) 
-	mkdirSync('./build')
-
-index.checkProject()
+exists('./build', exists => {
+	if(!exists){
+		mkdir('./build', err => {
+			if(err){
+				throw new Error(err)
+			}
+			index.checkProject()
+		})
+	}
+	else{
+		index.checkProject()
+	}
+}) 
