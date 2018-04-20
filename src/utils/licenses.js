@@ -4,7 +4,11 @@ module.exports = getLicences
 
 const {openSync,writeFileSync,closeSync} = require('fs')
 
+const {License} = require('../report_model')
+
 const debug = require('debug')('Licenses')
+
+// TODO: Logic - [Search package.json, Search in github or npm]
 
 /**
  * Gets the licenses from each dependency

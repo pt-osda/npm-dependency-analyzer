@@ -24,12 +24,15 @@
     "build-plugin"
   ],
   "dependencies": {
+    "async": "^2.6.0",
     "auditjs": "^2.4.3",
     "commander": "^2.15.1",
     "debug": "^3.1.0",
     "executive": "^1.5.13",
+    "isomorphic-fetch": "^2.2.1",
     "nsp": "3.2.1",
-    "yargs": "11.0.0"
+    "read-package-tree": "^5.2.1",
+    "yargs": "^11.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -40,6 +43,7 @@
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.7.0",
     "eslint-plugin-standard": "^3.0.1",
+    "jquery": "1.9.1",
     "mocha": "^5.1.0",
     "retire": "^1.6.0",
     "rimraf": "^2.6.2"

@@ -5,20 +5,15 @@ module.exports = {
 	checkProject
 }
 
-const exec = require('executive')
 const licenses = require('./utils/licenses')
 const vulnerabilities = require('./utils/vulnerabilities')
-const reportClass = require('./report_model')
-const {openSync, writeFileSync, closeSync } = require('fs')
+const dependencies = require('./utils/dependencies')
+const report = require('./report_model')
+const {openSync, writeFileSync, closeSync, readdir, readFileSync} = require('fs')
 
-const debug = require('debug')('Dependencies')
-
-const commands = {
-	'--production': 'npm la --json --prod', //Display only the dependency tree for packages in dependencies.
-	'--development': 'npm la --json --dev'  //Display only the dependency tree for packages in devDependencies.
-}
-
-const defaultCommand = 'npm la --json'
+const debug = require('debug')('Index')
+const async = require('async')
+const rpt = require ('read-package-tree')
 
 /**
  * Analyzes license and vulnerabilities from all dependencies 
@@ -27,7 +22,15 @@ const defaultCommand = 'npm la --json'
 function checkProject(command){
 	debug('Getting all dependencies')
 
-	function dependencyCb(dependencies) {
+	dependencies.getDependencies((err, {pkg, dependencies}) => {
+		if(err){
+			debug('Exiting with error getting dependencies')
+			throw new Error(err.message)
+		}
+		vulnerabilities(dependencies, ()=>{} ) //TODO: Make callback
+	})
+
+	/*function dependencyCb(dependencies) {
 		licenses(dependencies)
 
 		vulnerabilities( vulnerabilities => generateReport(dependencies, vulnerabilities) )
@@ -43,17 +46,17 @@ function checkProject(command){
 		throw new Error('Invalid arguments')
 	}
 
-	getDependencyGraph(commandString, dependencyCb)
+	getDependencyGraph(commandString, dependencyCb)*/
 	
 }
 
 function generateReport(dependencies, vulnerabilities) {
 
-	const report = new reportClass.Report('tag', dependencies.version, dependencies.name, dependencies.description)
+	const report = new report.Report('tag', dependencies.version, dependencies.name, dependencies.description)
 
 	for(let dependency in dependencies['dependencies']){
 		const currentDependency = dependencies['dependencies'][dependency]
-		const dep = new reportClass.Dependency(currentDependency.name, '', currentDependency.license)
+		const dep = new report.Dependency(currentDependency.name, '', currentDependency.license)
 		
 		const vul = vulnerabilities.find(obj => {
 			obj.module == dep.name
@@ -61,7 +64,7 @@ function generateReport(dependencies, vulnerabilities) {
 			
 		if(vul){
 			dep.vulnerabilities.push(
-				new reportClass.Vulnerability(
+				new report.Vulnerability(
 					vul.title,vul.module, vul.overview, vul.recommendation,
 					vul.advisory, vul.cvss_score, vul.vulnerable_versions
 				)
@@ -80,19 +83,28 @@ function generateReport(dependencies, vulnerabilities) {
  * @param {Function} cb callback to return all dependencies
  */
 function getDependencyGraph(commandString, cb){
-	debug('Executing command: "%s"', commandString)
-	exec.quiet('npm la --json')
-		.then(result => {
-			if(result.error){
-				throw new Error(result.stderr)
+	const nodeModules = {}
+
+	rpt('./', (err,data) => {
+		if(err){
+			throw new Error(err.message)
+		}
+	})
+
+	readdir('./node_modules', 'utf-8', (err, files) => {
+		if(err){
+			throw new Error(err.message)
+		}
+		async.forEachOf(files, (fileName) => {
+			if(fileName.includes('.'))
+				return
+			const fileContent = readFileSync(`./node_modules/${fileName}/package.json`, 'utf-8')
+			nodeModules[fileName] = JSON.parse(fileContent)
+			if(fileName === files[files.length - 1]){
+				generateGraph(nodeModules)
 			}
-			if(result.stdout === ''){
-				throw new Error('Invalid command')
-			}
-			
-			writeFile('dependencies.json', result.stdout)
-			cb(JSON.parse(result.stdout))
 		})
+	})
 }
 
 function writeFile(fileName, data){

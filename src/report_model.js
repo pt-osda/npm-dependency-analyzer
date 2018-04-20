@@ -10,22 +10,29 @@ module.exports.Report = class Report {
 }
 
 module.exports.Dependency = class Dependency {
-	constructor(title, hierarquy, license){
+	constructor(title, main_version){
 		this.title = title
-		this.hierarquy = hierarquy
-		this.license = license
+		this.main_version = main_version
+		this.private_versions = []
+		this.license = []
+		this.hierarchy = []
 		this.vulnerabilities = []
 	}
 }
-
+// TODO: i dont have recomendation and cvss_score
 module.exports.Vulnerability = class Vulnerability {
-	constructor(vulnerability_title, module_title, description, recommendation, references, cvss_score, versions){
+	constructor(vulnerability_title, module_title, description, references, versions){
 		this.vulnerability_title = vulnerability_title
 		this.module_title = module_title
 		this.description = description
-		this.recommendation = recommendation
 		this.references = references
-		this.cvss_score = cvss_score
-		this.versions = versions
+		this.affected_version = versions
+	}
+}
+
+module.exports.License = class License {
+	constructor(title){
+		this.title = title
+		this.origins = []
 	}
 }
