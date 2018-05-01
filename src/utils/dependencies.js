@@ -1,53 +1,60 @@
 'use strict'
 
 const {Dependency} = require('../report_model')
+const licenseManager = require('./licenses')
+const fileManager = require('./file-manager')
 
 const rtp = require('read-package-tree')
 const debug = require('debug')('Dependencies')
 
-const {openSync, writeFileSync, closeSync} = require('fs')
-
-module.exports = {
-	getDependencies
-}
+const semver = require('semver')
 
 /**
  * Gets all dependencies and builds an object after filtering into a ReportDependency
  * @param {Function} cb callback called when an error occurs or after filtering all dependencies
  */
-function getDependencies(cb){
-	debug('Get dependencies')
-	const dependencies = {}
+function getDependencies (cb) {
+  debug('Get dependencies')
+  const dependencies = {}
+  const licensePromises = []
 
-	rtp('./', (err, data) => {
-		if(err){
-			debug('Error getting dependencies')
-			return cb(err)
-		}
-		const modules = data.children
-		for(let module in modules) {
-			const pkg = modules[module].package
+  rtp('./', (err, data) => {
+    if (err) {
+      debug('Error getting dependencies')
+      return cb(err)
+    }
+    const modules = data.children
+    for (let module in modules) {
+      const pkg = modules[module].package
+      const version = semver.coerce(pkg.version).raw
 
-			let dependency
-			if(dependencies[pkg.name]){
-				dependency = dependencies[pkg.name]
-				dependency.title = pkg.name
-				dependency.main_version = pkg.version
-			}
-			else{
-				dependency = new Dependency(pkg.name, pkg.version)
-				dependencies[pkg.name] = dependency
-			}
+      let dependency
+      if (dependencies[pkg.name]) {
+        dependency = dependencies[pkg.name]
+        dependency.initializeDependency({title: pkg.name, main_version: version})
+      } else {
+        dependency = new Dependency({title: pkg.name, main_version: version})
+        dependencies[pkg.name] = dependency
+      }
 
-			dependency.license.push(pkg.license)
-			
-			insertHierarchies(dependencies, { children: modules[module].children, pkg })
-		}
+      licensePromises.push(licenseManager(dependency, pkg)) // This returns a promise. Before generating full report, need to check if all operations have ended
 
-		debug('Finished filtering dependencies')
-		writeToFile('testing.json', JSON.stringify(dependencies))
-		cb(null, { pkg: data.package, dependencies })
-	})
+      insertHierarchies(dependencies, { children: modules[module].children, pkg })
+    }
+
+    debug('Finished filtering dependencies')
+    fileManager.writeBuildFile('only-dependencies.json', JSON.stringify(dependencies))
+
+    Promise.all(licensePromises)
+      .then(() => {
+        const nonOptionalDependencies = Object.values(dependencies).filter(val => { return val.title !== undefined })
+        cb(null, { pkg: data.package, dependencies: nonOptionalDependencies })
+      })
+      .catch(err => {
+        debug('Error getting licenses')
+        throw new Error(err)
+      })
+  })
 }
 
 /**
@@ -55,36 +62,41 @@ function getDependencies(cb){
  * @param {Object} dependencies object to store all dependencies
  * @param {Object} module module to search for dependencies to insert hierarchy
  */
-function insertHierarchies(dependencies, module){
-	const modules =  module.dependencies || module.devDependencies
+function insertHierarchies (dependencies, {children, pkg}) {
+  const modules = { ...pkg.dependencies }
+  const version = semver.coerce(pkg.version).raw
 
-	for(let child in module.children){
-		if(modules && modules[child.name]){
-			delete modules[child]
-		}
-		
-		const childPkg = module.children[child].package
+  for (let child in children) {
+    const childPkg = children[child].package
+    let dependency = dependencies[childPkg.name]
 
-		if(!dependencies[childPkg.name]){
-			dependencies[childPkg.name] = new Dependency()
-			dependencies[childPkg.name].title = childPkg.name
-			dependencies[childPkg.name].main_version = childPkg.version
-		}
-		
-		dependencies[childPkg.name].hierarchy.push(module.pkg.name+'/v'+module.pkg.version)
-		dependencies[childPkg.name].private_versions.push(childPkg.version)
-	}
+    if (modules && modules[childPkg.name]) {
+      delete modules[childPkg.name]
+    }
 
-	for(let moduleName in modules){
-		if(!dependencies[moduleName]){
-			dependencies[moduleName] = new Dependency()
-		}
-		dependencies[moduleName].hierarchy.push(module.name+'/v'+module.version)
-	}
+    if (!dependency) {
+      dependency = new Dependency({title: pkg.name, main_version: version})
+
+      dependency.private_versions.push(version)
+      dependencies[childPkg.name] = dependency
+    }
+
+    dependency.insertParents({
+      parents: pkg.name + '/v' + version,
+      private_versions: childPkg.version })
+  }
+
+  for (let moduleName in modules) {
+    let dependency = dependencies[moduleName]
+    if (!dependencies[moduleName]) {
+      dependency = new Dependency()
+      dependencies[moduleName] = dependency
+    }
+
+    dependency.parents.push(pkg.name + '/v' + version)
+  }
 }
 
-function writeToFile(fileName, data){
-	const fileDescriptor = openSync('build/'+fileName, 'w')
-	writeFileSync(fileDescriptor, data, 'utf-8')
-	closeSync(fileDescriptor)
+module.exports = {
+  getDependencies
 }

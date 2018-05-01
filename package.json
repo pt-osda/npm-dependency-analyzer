@@ -1,19 +1,20 @@
 {
   "name": "npm-dependency-analyzer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Plugin to validate dependencies, concerning their license and vulnerabities",
   "main": "index.js",
   "bin": {
     "npm-dependency-analyzer": "./bin/npm-dependency-analyzer.js"
   },
   "scripts": {
+    "debug": "DEBUG=* node ./bin/npm-dependency-analyzer.js",
     "prebuild": "npm install && rimraf build/",
     "build": "npm run lint && npm test",
-    "lint": "eslint .",
-    "test": "DEBUG=* node ./bin/npm-dependency-analyzer.js"
+    "lint": "standard --fix",
+    "test": "jest"
   },
   "engines": {
-    "node": ">=8.0.0",
+    "node": ">=8.6.0",
     "npm": ">=2.0.0"
   },
   "keywords": [
@@ -25,28 +26,26 @@
   ],
   "dependencies": {
     "async": "^2.6.0",
-    "auditjs": "^2.4.3",
     "commander": "^2.15.1",
     "debug": "^3.1.0",
-    "executive": "^1.5.13",
     "isomorphic-fetch": "^2.2.1",
-    "nsp": "3.2.1",
     "read-package-tree": "^5.2.1",
-    "yargs": "^11.0.0"
+    "semver": "^5.5.0",
+    "spdx-correct": "^3.0.0",
+    "spdx-expression-parse": "^3.0.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "eslint": "^4.19.0",
-    "eslint-config-standard": "^11.0.0",
-    "eslint-plugin-import": "^2.11.0",
-    "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-promise": "^3.7.0",
-    "eslint-plugin-standard": "^3.0.1",
-    "jquery": "1.9.1",
-    "mocha": "^5.1.0",
-    "retire": "^1.6.0",
-    "rimraf": "^2.6.2"
+    "jest": "^22.4.3",
+    "rimraf": "^2.6.2",
+    "standard": "^11.0.1"
+  },
+  "standard": {
+    "env": [
+      "jest"
+    ],
+    "globals": [
+      "Request"
+    ]
   },
   "repository": {
     "type": "git",
