@@ -1,20 +1,23 @@
 {
   "name": "npm-dependency-analyzer",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Plugin to validate dependencies, concerning their license and vulnerabities",
   "main": "index.js",
   "bin": {
     "npm-dependency-analyzer": "./bin/npm-dependency-analyzer.js"
   },
   "scripts": {
+    "prestart:dev": "npm run build",
+    "start:dev": "nodemon --exec npm run lint",
     "debug": "DEBUG=* node ./bin/npm-dependency-analyzer.js",
-    "prebuild": "npm install && rimraf build/",
-    "build": "npm run lint && npm test",
-    "lint": "standard --fix",
+    "clean": "rimraf build/ && rimraf lib/",
+    "prebuild": "npm install && npm run clean",
+    "build": "npm run lint && babel src -d lib && npm test",
+    "lint": "standard src/ --fix",
     "test": "jest"
   },
   "engines": {
-    "node": ">=8.6.0",
+    "node": ">=8.0.0",
     "npm": ">=2.0.0"
   },
   "keywords": [
@@ -29,13 +32,19 @@
     "commander": "^2.15.1",
     "debug": "^3.1.0",
     "isomorphic-fetch": "^2.2.1",
+    "lodash": "^4.17.10",
     "read-package-tree": "^5.2.1",
     "semver": "^5.5.0",
     "spdx-correct": "^3.0.0",
     "spdx-expression-parse": "^3.0.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-watch": "^2.0.7",
     "jest": "^22.4.3",
+    "nodemon": "^1.17.4",
     "rimraf": "^2.6.2",
     "standard": "^11.0.1"
   },
@@ -45,6 +54,19 @@
     ],
     "globals": [
       "Request"
+    ]
+  },
+  "babel": {
+    "presets": [
+      [
+        "env",
+        {
+          "targets": {
+            "node": "8.0.0"
+          }
+        }
+      ],
+      "stage-0"
     ]
   },
   "repository": {

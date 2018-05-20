@@ -1,19 +1,22 @@
 'use strict'
 
-const {Dependency} = require('../report_model')
-const licenseManager = require('./licenses')
-const fileManager = require('./file-manager')
+import {Dependency} from '../report_model'
+import licenseManager from './licenses'
+import fileManager from './file-manager'
 
-const rtp = require('read-package-tree')
-const debug = require('debug')('Dependencies')
+import rtp from 'read-package-tree'
+// import lodash from 'lodash'
 
-const semver = require('semver')
+import semver from 'semver'
+import debugSetup from 'debug'
+
+const debug = debugSetup('Dependencies')
 
 /**
  * Gets all dependencies and builds an object after filtering into a ReportDependency
  * @param {Function} cb callback called when an error occurs or after filtering all dependencies
  */
-function getDependencies (cb) {
+export default function getDependencies (cb) {
   debug('Get dependencies')
   const dependencies = {}
   const licensePromises = []
@@ -37,7 +40,7 @@ function getDependencies (cb) {
         dependencies[pkg.name] = dependency
       }
 
-      licensePromises.push(licenseManager(dependency, pkg)) // This returns a promise. Before generating full report, need to check if all operations have ended
+      licensePromises.push(licenseManager(dependency, pkg))
 
       insertHierarchies(dependencies, { children: modules[module].children, pkg })
     }
@@ -63,7 +66,7 @@ function getDependencies (cb) {
  * @param {Object} module module to search for dependencies to insert hierarchy
  */
 function insertHierarchies (dependencies, {children, pkg}) {
-  const modules = { ...pkg.dependencies }
+  const modules = pkg.dependencies
   const version = semver.coerce(pkg.version).raw
 
   for (let child in children) {
@@ -95,8 +98,4 @@ function insertHierarchies (dependencies, {children, pkg}) {
 
     dependency.parents.push(pkg.name + '/v' + version)
   }
-}
-
-module.exports = {
-  getDependencies
 }

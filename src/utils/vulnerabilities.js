@@ -1,14 +1,15 @@
 'use strict'
 
-module.exports = getVulnerabilities
+import catchifyPromise from './utility-functions'
+import fileManager from './file-manager'
 
-const fetch = require('isomorphic-fetch')
-const fileManager = require('./file-manager')
-const semver = require('semver')
+import fetch from 'isomorphic-fetch'
+import semver from 'semver'
+import {Vulnerability} from '../report_model'
+import RequestBody from '../oss-fetch-body'
+import debugSetup from 'debug'
 
-const debug = require('debug')('Vulnerabilities')
-const {Vulnerability} = require('../report_model')
-const RequestBody = require('../oss-fetch-body')
+const debug = debugSetup('Vulnerabilities')
 
 const getRequest = body => {
   return new Request('https://ossindex.net/v2.0/package', {
@@ -24,29 +25,31 @@ const getRequest = body => {
  * Gets all vulnerabilities on the current project
  * Need to do POST and send all packages because sending a request for each dependency breaks the server for a bit
  */
-async function getVulnerabilities (dependencies, cb) {
+export default async function getVulnerabilities (dependencies) {
   debug('Checking Vulnerabilities')
 
-  const requestBody = []
+  // const requestBody = []
 
-  for (let prop in dependencies) {
-    const dependency = dependencies[prop]
-    if (!dependency.title) { // In case it's a optional dependency and was not needed to install, it's not gonna have a name or version
-      delete dependencies[prop]
-      continue
-    }
-
+  const requestBody = dependencies.map(dependency => {
     const versions = [dependency.main_version, ...dependency.private_versions]
     const minVersion = versions.sort(semver.compare)[0]
 
-    requestBody.push(new RequestBody('npm', dependency.title, minVersion))
+    return new RequestBody('npm', dependency.title, minVersion)
+  })
+
+  const [fetchError, response] = await catchifyPromise(fetch(getRequest(requestBody)))
+  if (fetchError) {
+    throw new Error(fetchError.message)
   }
 
-  const response = await fetch(getRequest(requestBody))
   if (response.status !== 200) {
     throw new Error('Vulnerabilities Request failed: Status-' + response.status)
   }
-  const body = await response.json()
+
+  const [jsonError, body] = await catchifyPromise(response.json())
+  if (jsonError) {
+    throw new Error(jsonError.message)
+  }
 
   for (let prop in body) {
     const vulnerability = body[prop]
@@ -69,5 +72,5 @@ async function getVulnerabilities (dependencies, cb) {
 
   fileManager.writeBuildFile('dependencies-vulnerabilities.json', JSON.stringify(dependencies))
   debug('End process')
-  cb(null, dependencies)
+  return dependencies
 }

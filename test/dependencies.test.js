@@ -1,9 +1,9 @@
-const dependencies = require('../src/utils/dependencies')
+import getDependencies from '../lib/utils/dependencies'
 
 test('check-dependencies-elements', done => {
   expect.assertions(3)
 
-  dependencies.getDependencies((err, data) => {
+  getDependencies((err, data) => {
     expect(err).toBeNull()
     expect(data).toBeDefined()
 

@@ -1,0 +1,9 @@
+{
+    "verbose": true,
+    "events": {
+        "restart": "babel src -d lib"
+    },
+    "watch": [
+        "./src"
+    ]
+}

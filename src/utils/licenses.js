@@ -1,48 +1,21 @@
 'use strict'
 
-const fileManager = require('./file-manager')
+import licenseUtility from './fetch-license-utility'
+import fileManager from './file-manager'
+import {License} from '../report_model'
 
-const {License} = require('../report_model')
+import parse from 'spdx-expression-parse'
+import correct from 'spdx-correct'
+import fetch from 'isomorphic-fetch'
+import lodash from 'lodash'
+import debugSetup from 'debug'
 
-const debug = require('debug')('Licenses')
-const parse = require('spdx-expression-parse')
-const correct = require('spdx-correct')
-const fetch = require('isomorphic-fetch')
-
-const licenseFileRegex = /SEE LICENSE IN (.*?)$/i
-const gitHubRegex = /github.com(.*?)$/i
-
-const gitHubLicenseApiUrl = (owner, repo) => `https://api.github.com/repos/${owner}/${repo}/license`
-
-const possibleOrigins = {
-  packagePropertyLicense: 'Found in license property of package.json',
-  fileLicense: 'Found in license file',
-  githubLicense: 'Found using the Github API for the repository'
-}
-
-const licenses = {
-  'http://www.apache.org/licenses/LICENSE-1.1': 'Apache Software License, Version 1.1',
-  'http://www.apache.org/licenses/LICENSE-2.0': 'Apache Software License, Version 2.0',
-  'https://opensource.org/licenses/BSD-2-Clause': 'The 2-Clause BSD License',
-  'https://opensource.org/licenses/BSD-3-Clause': 'The 3-Clause BSD License',
-  'http://repository.jboss.org/licenses/cc0-1.0.txt': 'Creative Commons Legal Code',
-  'https://www.eclipse.org/legal/cpl-v10.html': 'Common Public License - v 1.0',
-  'https://www.eclipse.org/legal/epl-v10.html': 'Eclipse Public License - v 1.0',
-  'https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.txt': 'Eclipse Public License - v 2.0',
-  'https://www.gnu.org/licenses/gpl-1.0': 'GNU GENERAL PUBLIC LICENSE, Version 1',
-  'https://www.gnu.org/licenses/gpl-2.0': 'GNU GENERAL PUBLIC LICENSE, Version 2',
-  'https://www.gnu.org/licenses/gpl-3.0': 'GNU GENERAL PUBLIC LICENSE, Version 3',
-  'https://www.gnu.org/licenses/lgpl-2.1': 'GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1',
-  'https://www.gnu.org/licenses/lgpl-3.0': 'GNU LESSER GENERAL PUBLIC LICENSE, Version 3',
-  'https://opensource.org/licenses/MIT': 'MIT License',
-  'https://www.mozilla.org/en-US/MPL/1.1': 'Mozilla Public License Version 1.1',
-  'https://www.mozilla.org/en-US/MPL/2.0': 'Mozilla Public License, Version 2.0'
-}
+const debug = debugSetup('Licenses')
 
 function filterLicenseInFile (fileData) {
-  for (let l in licenses) {
+  for (let l in licenseUtility.knownLicenses) {
     if (fileData.includes(l)) {
-      return licenses[l]
+      return licenseUtility.knownLicenses[l]
     }
   }
 
@@ -52,14 +25,15 @@ function filterLicenseInFile (fileData) {
 async function getGitHubLicense (pkg, cb) {
   const repository = pkg.repository
   if (repository !== undefined && repository.type === 'git') {
-    const packageRepo = repository.url.match(gitHubRegex)
+    const packageRepo = repository.url.match(licenseUtility.gitHubRegex)
     if (packageRepo === null) {
       return null
     }
+
     const splitRepo = packageRepo[1].split('/')
     const owner = splitRepo[1]
     const repo = splitRepo[2].replace('.git', '')
-    fetch(gitHubLicenseApiUrl(owner, repo))
+    fetch(licenseUtility.gitHubLicenseApiUrl(owner, repo))
       .then(response => {
         if (response.headers.get('X-RateLimit-Remaining') === '0') {
           debug('No more requests available')
@@ -74,7 +48,7 @@ async function getGitHubLicense (pkg, cb) {
         response.json()
           .then(body => {
             if (body.license) {
-              return new License(body.license.spdx_id, possibleOrigins['githubLicense'])
+              return new License(body.license.spdx_id, licenseUtility.possibleOrigins['githubLicense'])
             }
           })
           .catch(err => {
@@ -89,13 +63,13 @@ async function getGitHubLicense (pkg, cb) {
 
 function parseLicense (licenseName, pkg) {
   if (licenseName === 'Public Domain') {
-    return new License(licenseName, possibleOrigins['packagePropertyLicense'])
+    return new License(licenseName, licenseUtility.possibleOrigins['packagePropertyLicense'])
   }
 
   try {
     const correctedVersion = correct(licenseName)
     const parsedLicense = parse(correctedVersion).license
-    return new License(parsedLicense, possibleOrigins['packagePropertyLicense'])
+    return new License(parsedLicense, licenseUtility.possibleOrigins['packagePropertyLicense'])
   } catch (err) {
     throw new Error('Invalid license name: ' + licenseName)
   }
@@ -110,7 +84,7 @@ function getPackageParsedLicense (license, pkg) {
 }
 
 function getPackageLicense (licenseObj) {
-  if (Array.isArray(licenseObj)) {
+  if (lodash.isArray(licenseObj)) {
     return licenseObj.map(value => {
       return getPackageParsedLicense(value)
     })
@@ -134,7 +108,7 @@ async function getLocalLicense (pkg) {
         return resolve(license)
       }
 
-      const licenseFile = pkg.license.match(licenseFileRegex)
+      const licenseFile = pkg.license.match(licenseUtility.licenseFileRegex)
       if (licenseFile != null) {
         fileManager.readFile('./node_modules/' + pkg._location + '/' + licenseFile, (err, data) => {
           if (err) {
@@ -158,12 +132,11 @@ async function getLocalLicense (pkg) {
   })
 }
 
-function getLicense (dependency, depPkg) {
-  const prm = getLocalLicense(depPkg)
-  prm
+export default function getLicense (dependency, depPkg) {
+  return getLocalLicense(depPkg)
     .then(license => {
       if (license) {
-        if (license.constructor === 'Array') {
+        if (lodash.isArray(license)) {
           dependency.license.push(...license)
         } else {
           dependency.license.push(license)
@@ -173,8 +146,4 @@ function getLicense (dependency, depPkg) {
     .catch(err => {
       throw new Error(err.message)
     })
-
-  return prm
 }
-
-module.exports = getLicense

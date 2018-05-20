@@ -1,3 +1,15 @@
+'use strict'
+
+import lodash from 'lodash'
+
+function checkParams (ctorName, required = [], params = {}) {
+  const missing = required.filter(param => !(param in params))
+
+  if (missing.length) {
+    throw new Error(`${ctorName}() Missing required parameter(s):
+    ${missing.join(', ')}`)
+  }
+}
 
 module.exports.Report = class Report {
   constructor (id, version, name, description) {
@@ -18,11 +30,10 @@ module.exports.Dependency = class Dependency {
    * @param {Object} options This object can have 0 to 2 properties, them being title and main_version
    */
   constructor (options) {
-    if (options !== undefined && (options.title === undefined || options.main_version === undefined)) {
-      throw new Error(`Invalid parameters received:\n\t Everyone needs to be defined\n\t\t
-        -title: ${options.title} \n\t\t-main_version: ${options.main_version}`)
+    if (options) {
+      checkParams('Dependency', ['title', 'main_version'], options)
+      Object.assign(this, options)
     }
-    Object.assign(this, options)
     this.private_versions = []
     this.license = []
     this.parents = []
@@ -36,19 +47,26 @@ module.exports.Dependency = class Dependency {
 
   insertParents (options) {
     this.parents.push(options.parents)
-    this.private_versions.push(options.private_versions)
+
+    const version = options.private_versions
+    const index = lodash.indexOf(this.private_versions, options.private_versions)
+
+    if (this.main_version !== version) {
+      if (index === -1) {
+        this.private_versions.push(options.private_versions)
+      } else {
+        lodash.pullAt(this.private_versions, index)
+      }
+    }
   }
 }
 
 module.exports.Vulnerability = class Vulnerability {
   constructor (options) {
-    if (options !== undefined && (options.vulnerability_title === undefined || options.module_title === undefined ||
-      options.versions === undefined)) {
-      throw new Error(`Invalid parameters received:\n\t Everyone needs to be defined\n\t\t
-        -vulnerability_title: ${options.vulnerability_title} \n\t\t-module_title: ${options.module_title} \n\t\t
-        -versions: ${options.versions}`)
+    if (options) {
+      checkParams('Vulnerability', ['vulnerability_title', 'module_title', 'versions'], options)
+      Object.assign(this, options)
     }
-    Object.assign(this, options)
   }
 }
 

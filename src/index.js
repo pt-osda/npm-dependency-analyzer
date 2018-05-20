@@ -1,15 +1,13 @@
 'use strict'
 
-module.exports = {
-  checkProject
-}
+import vulnerabilities from './utils/vulnerabilities'
+import getDependencies from './utils/dependencies'
+import {Report} from './report_model'
+import fileManager from './utils/file-manager'
+import catchifyPromise from './utils/utility-functions'
+import debugSetup from 'debug'
 
-const vulnerabilities = require('./utils/vulnerabilities')
-const dependencies = require('./utils/dependencies')
-const {Report} = require('./report_model')
-const fileManager = require('./utils/file-manager')
-
-const debug = require('debug')('Index')
+const debug = debugSetup('Index')
 
 function generateReport (pkg, dependencies) {
   const report = new Report('tag', pkg.version, pkg.name, pkg.description)
@@ -25,21 +23,20 @@ function generateReport (pkg, dependencies) {
 
 /**
  * Analyzes license and vulnerabilities from all dependencies
- * @param {String} command npm CLI command to execute. values can be "--production" and --development or undefined
  */
-function checkProject (command) {
+export default function () {
   debug('Getting all dependencies')
 
-  dependencies.getDependencies((err, {pkg, dependencies}) => {
-    if (err) {
+  getDependencies(async (dependenciesError, {pkg, dependencies}) => {
+    if (dependenciesError) {
       debug('Exiting with error getting dependencies')
-      throw new Error(err.message)
+      throw new Error(`DependenciesError: ${dependenciesError.message}`)
     }
-    vulnerabilities(dependencies, (err, data) => {
-      if (err) {
-        throw new Error(err.message)
-      }
-      generateReport(pkg, data)
-    })
+
+    const [vulnerabilitiesError, deps] = await catchifyPromise(vulnerabilities(dependencies))
+    if (vulnerabilitiesError) {
+      throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
+    }
+    generateReport(pkg, deps)
   })
 }
