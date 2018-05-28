@@ -12,11 +12,11 @@ function checkParams (ctorName, required = [], params = {}) {
 }
 
 module.exports.Report = class Report {
-  constructor (id, version, name, description) {
-    this.id = id
+  constructor (version, name, description, timestamp) {
     this.version = version
     this.name = name
     this.description = description
+    this.timestamp = timestamp
     this.dependencies = []
   }
 }
@@ -32,10 +32,10 @@ module.exports.Dependency = class Dependency {
   constructor (options) {
     if (options) {
       checkParams('Dependency', ['title', 'main_version'], options)
-      Object.assign(this, options)
+      this.initializeDependency(options)
     }
     this.private_versions = []
-    this.license = []
+    this.licenses = []
     this.parents = []
     this.vulnerabilities = []
   }
@@ -43,6 +43,9 @@ module.exports.Dependency = class Dependency {
   initializeDependency (options) {
     this.title = options.title
     this.main_version = options.main_version
+    if (options.description) {
+      this.description = options.description
+    }
   }
 
   insertParents (options) {
@@ -64,7 +67,7 @@ module.exports.Dependency = class Dependency {
 module.exports.Vulnerability = class Vulnerability {
   constructor (options) {
     if (options) {
-      checkParams('Vulnerability', ['vulnerability_title', 'module_title', 'versions'], options)
+      checkParams('Vulnerability', ['id', 'title', 'description', 'references', 'versions'], options)
       Object.assign(this, options)
     }
   }
@@ -72,7 +75,7 @@ module.exports.Vulnerability = class Vulnerability {
 
 module.exports.License = class License {
   constructor (title, origin) {
-    this.title = title
-    this.origins = [origin]
+    this.spdx_id = title
+    this.source = origin
   }
 }

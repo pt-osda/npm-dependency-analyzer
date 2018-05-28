@@ -12,7 +12,7 @@ import debugSetup from 'debug'
 const debug = debugSetup('Vulnerabilities')
 
 const getRequest = body => {
-  return new Request('https://ossindex.net/v2.0/package', {
+  return new Request('http://localhost:8080/npm/dependency/vulnerabilities', {
     headers: {
       'Content-Type': 'application/json'
     },
@@ -21,14 +21,13 @@ const getRequest = body => {
   })
 }
 
+// TODO: Need to check for error from the API. In case of error affect the Dependency property for error_info and not put vulnerabilitiesCount
 /**
  * Gets all vulnerabilities on the current project
  * Need to do POST and send all packages because sending a request for each dependency breaks the server for a bit
  */
 export default async function getVulnerabilities (dependencies) {
   debug('Checking Vulnerabilities')
-
-  // const requestBody = []
 
   const requestBody = dependencies.map(dependency => {
     const versions = [dependency.main_version, ...dependency.private_versions]
@@ -58,16 +57,17 @@ export default async function getVulnerabilities (dependencies) {
     const vulnerabilities = vulnerability.vulnerabilities.map(elem => {
       return new Vulnerability(
         {
-          vulnerability_title: elem.title,
-          module_title: vulnerability.name,
+          id: elem.id,
+          title: elem.title,
           description: elem.description,
           references: elem.references,
           versions: elem.versions
         })
     })
 
-    dependencies.find(elem => { return elem.title === vulnerability.name })
-      .vulnerabilities = vulnerabilities
+    const dependency = dependencies.find(elem => { return elem.title === vulnerability.title })
+    dependency.vulnerabilities = vulnerabilities
+    dependency.vulnerabilities_count = vulnerability.totalVulnerabilities
   }
 
   fileManager.writeBuildFile('dependencies-vulnerabilities.json', JSON.stringify(dependencies))

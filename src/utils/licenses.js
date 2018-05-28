@@ -68,8 +68,7 @@ function parseLicense (licenseName, pkg) {
 
   try {
     const correctedVersion = correct(licenseName)
-    const parsedLicense = parse(correctedVersion).license
-    return new License(parsedLicense, licenseUtility.possibleOrigins['packagePropertyLicense'])
+    return new License(correctedVersion, licenseUtility.possibleOrigins['packagePropertyLicense'])
   } catch (err) {
     throw new Error('Invalid license name: ' + licenseName)
   }
@@ -125,10 +124,8 @@ async function getLocalLicense (pkg) {
       }
 
       return resolve(parseLicense(pkg.license))
-    } else {
-      const value = await getGitHubLicense(pkg)
-      return resolve(value)
     }
+    return resolve()
   })
 }
 
@@ -137,9 +134,9 @@ export default function getLicense (dependency, depPkg) {
     .then(license => {
       if (license) {
         if (lodash.isArray(license)) {
-          dependency.license.push(...license)
+          dependency.licenses.push(...license)
         } else {
-          dependency.license.push(license)
+          dependency.licenses.push(license)
         }
       }
     })

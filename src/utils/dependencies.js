@@ -34,9 +34,9 @@ export default function getDependencies (cb) {
       let dependency
       if (dependencies[pkg.name]) {
         dependency = dependencies[pkg.name]
-        dependency.initializeDependency({title: pkg.name, main_version: version})
+        dependency.initializeDependency({title: pkg.name, main_version: version, description: pkg.description})
       } else {
-        dependency = new Dependency({title: pkg.name, main_version: version})
+        dependency = new Dependency({title: pkg.name, main_version: version, description: pkg.description})
         dependencies[pkg.name] = dependency
       }
 
@@ -78,7 +78,7 @@ function insertHierarchies (dependencies, {children, pkg}) {
     }
 
     if (!dependency) {
-      dependency = new Dependency({title: pkg.name, main_version: version})
+      dependency = new Dependency({title: pkg.name, main_version: version, description: pkg.description})
 
       dependency.private_versions.push(version)
       dependencies[childPkg.name] = dependency

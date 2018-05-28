@@ -6,6 +6,7 @@ export default async function catchifyPromise (promise) {
       resolve([null, data])
     })
       .catch(err => {
+        console.log(err)
         resolve([err])
       })
   })

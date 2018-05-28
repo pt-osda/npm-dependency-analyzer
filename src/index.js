@@ -6,11 +6,22 @@ import {Report} from './report_model'
 import fileManager from './utils/file-manager'
 import catchifyPromise from './utils/utility-functions'
 import debugSetup from 'debug'
+import fetch from 'isomorphic-fetch'
 
 const debug = debugSetup('Index')
 
+const getRequest = body => {
+  return new Request('http://localhost:8080/report', {
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    method: 'POST',
+    body: JSON.stringify(body)
+  })
+}
+
 function generateReport (pkg, dependencies) {
-  const report = new Report('tag', pkg.version, pkg.name, pkg.description)
+  const report = new Report(pkg.version, pkg.name, pkg.description, new Date(Date.now()).toISOString())
   let i = 0
   for (let prop in dependencies) {
     i += dependencies[prop].vulnerabilities.length
@@ -19,6 +30,8 @@ function generateReport (pkg, dependencies) {
   report.dependencies = dependencies
 
   fileManager.writeBuildFile('report.json', JSON.stringify(report))
+
+  return report
 }
 
 /**
@@ -37,6 +50,11 @@ export default function () {
     if (vulnerabilitiesError) {
       throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
     }
-    generateReport(pkg, deps)
+    const report = generateReport(pkg, deps)
+
+    const [reportError, reportInfo] = await catchifyPromise(fetch(getRequest(report)))
+    if (reportError) {
+      throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
+    }
   })
 }
