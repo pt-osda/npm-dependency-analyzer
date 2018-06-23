@@ -4,7 +4,6 @@ import licenseUtility from './fetch-license-utility'
 import fileManager from './file-manager'
 import {License} from '../report_model'
 
-import parse from 'spdx-expression-parse'
 import correct from 'spdx-correct'
 import fetch from 'isomorphic-fetch'
 import lodash from 'lodash'
@@ -129,7 +128,7 @@ async function getLocalLicense (pkg) {
   })
 }
 
-export default function getLicense (dependency, depPkg) {
+export default function getLicense (dependency, depPkg) { // TODO: Use package license-checker to get license for each dependency
   return getLocalLicense(depPkg)
     .then(license => {
       if (license) {

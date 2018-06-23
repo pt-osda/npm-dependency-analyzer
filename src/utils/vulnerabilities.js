@@ -50,6 +50,8 @@ export default async function getVulnerabilities (dependencies) {
     throw new Error(jsonError.message)
   }
 
+  fileManager.writeBuildFile('api-vulnerabilities.json', JSON.stringify(body))
+
   for (let prop in body) {
     const vulnerability = body[prop]
     if (!vulnerability.vulnerabilities) { continue }

@@ -1,13 +1,12 @@
 {
   "name": "npm-dependency-analyzer",
-  "version": "0.3.0",
+  "version": "0.4.2",
   "description": "Plugin to validate dependencies, concerning their license and vulnerabities",
   "main": "index.js",
   "bin": {
     "npm-dependency-analyzer": "./bin/npm-dependency-analyzer.js"
   },
   "scripts": {
-    "prestart:dev": "npm run build",
     "start:dev": "nodemon --exec npm run lint",
     "debug": "DEBUG=* node ./bin/npm-dependency-analyzer.js",
     "clean": "rimraf build/ && rimraf lib/",
@@ -32,11 +31,11 @@
     "commander": "^2.15.1",
     "debug": "^3.1.0",
     "isomorphic-fetch": "^2.2.1",
+    "license-checker": "^20.1.0",
     "lodash": "^4.17.10",
     "read-package-tree": "^5.2.1",
     "semver": "^5.5.0",
-    "spdx-correct": "^3.0.0",
-    "spdx-expression-parse": "^3.0.0"
+    "spdx-correct": "^3.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

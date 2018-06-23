@@ -10,6 +10,9 @@ import fetch from 'isomorphic-fetch'
 
 const debug = debugSetup('Index')
 
+// TODO: Check all versions for vulnerabilities. Identify if one already exists dont insert it into report
+// TODO: Also check error when getting certain dependencies vulnerabilities
+
 const getRequest = body => {
   return new Request('http://localhost:8080/report', {
     headers: {
@@ -20,14 +23,25 @@ const getRequest = body => {
   })
 }
 
-function generateReport (pkg, dependencies) {
-  const report = new Report(pkg.version, pkg.name, pkg.description, new Date(Date.now()).toISOString())
+function generateReport (policyData, pkg, dependencies) {
+  const reportOptions = {
+    id: policyData.project_id,
+    name: policyData.project_name,
+    version: pkg.version,
+    description: pkg.description,
+    timestamp: new Date(Date.now()).toISOString(),
+    organization: policyData.organization,
+    repo: policyData.repo,
+    repo_owner: policyData.repo_owner
+  }
+
+  const report = new Report(reportOptions)
   let i = 0
   for (let prop in dependencies) {
     i += dependencies[prop].vulnerabilities.length
   }
   debug('Vulnerabilities: %d', i)
-  report.dependencies = dependencies
+  report.insertDependencies(dependencies)
 
   fileManager.writeBuildFile('report.json', JSON.stringify(report))
 
@@ -37,24 +51,23 @@ function generateReport (pkg, dependencies) {
 /**
  * Analyzes license and vulnerabilities from all dependencies
  */
-export default function () {
+export default async function (policyData) {
   debug('Getting all dependencies')
 
-  getDependencies(async (dependenciesError, {pkg, dependencies}) => {
-    if (dependenciesError) {
-      debug('Exiting with error getting dependencies')
-      throw new Error(`DependenciesError: ${dependenciesError.message}`)
-    }
+  const [dependenciesError, {pkg, dependencies}] = await catchifyPromise(getDependencies())
+  if (dependenciesError) {
+    debug('Exiting with error getting dependencies')
+    throw new Error(`DependenciesError: ${dependenciesError.message}`)
+  }
 
-    const [vulnerabilitiesError, deps] = await catchifyPromise(vulnerabilities(dependencies))
-    if (vulnerabilitiesError) {
-      throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
-    }
-    const report = generateReport(pkg, deps)
+  const [vulnerabilitiesError, deps] = await catchifyPromise(vulnerabilities(dependencies))
+  if (vulnerabilitiesError) {
+    throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
+  }
+  const report = generateReport(policyData, pkg, deps)
 
-    const [reportError, reportInfo] = await catchifyPromise(fetch(getRequest(report)))
-    if (reportError) {
-      throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
-    }
-  })
+  const [reportError] = await catchifyPromise(fetch(getRequest(report)))
+  if (reportError) {
+    throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
+  }
 }
