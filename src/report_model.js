@@ -6,14 +6,13 @@ function checkParams (ctorName, required = [], params = {}) {
   const missing = required.filter(param => !(param in params))
 
   if (missing.length) {
-    throw new Error(`${ctorName}() Missing required parameter(s):
-    ${missing.join(', ')}`)
+    throw new Error(`${ctorName}() Missing required parameter(s): ${missing.join(', ')}`)
   }
 }
 
 module.exports.Report = class Report {
   constructor (options) {
-    checkParams('Dependency', ['id', 'name', 'version', 'description', 'timestamp'], options)
+    checkParams('Report', ['id', 'name', 'version', 'description', 'timestamp'], options)
     Object.assign(this, options)
     this.dependencies = []
   }
@@ -40,6 +39,7 @@ module.exports.Dependency = class Dependency {
     this.licenses = []
     this.children = []
     this.vulnerabilities = []
+    this.vulnerabilities_count = 0
   }
 
   initializeDependency (options) {
@@ -86,5 +86,6 @@ module.exports.License = class License {
   constructor (title, origin) {
     this.spdx_id = title
     this.source = origin
+    this.valid = true
   }
 }

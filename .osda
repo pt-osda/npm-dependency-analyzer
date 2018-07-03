@@ -3,5 +3,6 @@
   "project_name": "policy-npm-dependency-analyzer",
   "organization": "pt-osda",
   "repo": "npm-dependency-analyzer",
-  "repo_owner": "pt-osda"
+  "repo_owner": "pt-osda",
+  "invalid_licenses": ["MIT"]
 }

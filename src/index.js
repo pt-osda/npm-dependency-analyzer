@@ -7,11 +7,9 @@ import fileManager from './utils/file-manager'
 import catchifyPromise from './utils/utility-functions'
 import debugSetup from 'debug'
 import fetch from 'isomorphic-fetch'
+import licenseManager from './utils/licenses'
 
 const debug = debugSetup('Index')
-
-// TODO: Check all versions for vulnerabilities. Identify if one already exists dont insert it into report
-// TODO: Also check error when getting certain dependencies vulnerabilities
 
 const getRequest = body => {
   return new Request('http://localhost:8080/report', {
@@ -36,11 +34,6 @@ function generateReport (policyData, pkg, dependencies) {
   }
 
   const report = new Report(reportOptions)
-  let i = 0
-  for (let prop in dependencies) {
-    i += dependencies[prop].vulnerabilities.length
-  }
-  debug('Vulnerabilities: %d', i)
   report.insertDependencies(dependencies)
 
   fileManager.writeBuildFile('report.json', JSON.stringify(report))
@@ -54,7 +47,7 @@ function generateReport (policyData, pkg, dependencies) {
 export default async function (policyData) {
   debug('Getting all dependencies')
 
-  const [dependenciesError, {pkg, dependencies}] = await catchifyPromise(getDependencies())
+  const [dependenciesError, {pkg, dependencies}] = await catchifyPromise(getDependencies(policyData.invalid_licenses))
   if (dependenciesError) {
     debug('Exiting with error getting dependencies')
     throw new Error(`DependenciesError: ${dependenciesError.message}`)

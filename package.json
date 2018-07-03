@@ -17,7 +17,7 @@
   },
   "engines": {
     "node": ">=8.0.0",
-    "npm": ">=2.0.0"
+    "npm": ">=5.7.0"
   },
   "keywords": [
     "CLI",
@@ -27,12 +27,11 @@
     "build-plugin"
   ],
   "dependencies": {
-    "async": "^2.6.0",
-    "commander": "^2.15.1",
     "debug": "^3.1.0",
     "isomorphic-fetch": "^2.2.1",
     "license-checker": "^20.1.0",
     "lodash": "^4.17.10",
+    "nlf": "^2.0.1",
     "read-package-tree": "^5.2.1",
     "semver": "^5.5.0",
     "spdx-correct": "^3.0.0"

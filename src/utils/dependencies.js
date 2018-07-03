@@ -16,7 +16,7 @@ const debug = debugSetup('Dependencies')
  * Gets all dependencies and builds an object after filtering into a ReportDependency
  * @param {Function} cb callback called when an error occurs or after filtering all dependencies
 */
-export default function getDependencies () {
+export default function getDependencies (invalidLicenses) {
   debug('Get dependencies')
   return new Promise((resolve, reject) => {
     const dependencies = {}
@@ -29,8 +29,9 @@ export default function getDependencies () {
       }
       const modules = data.children
       const directDependencies = { ...data.package.dependencies, ...data.package.devDependencies }
-      for (let module in modules) {
-        const pkg = modules[module].package
+
+      modules.forEach(element => {
+        const pkg = element.package
         const version = semver.coerce(pkg.version).raw
 
         let dependency
@@ -43,10 +44,10 @@ export default function getDependencies () {
           dependencies[pkg.name] = dependency
         }
 
-        licensePromises.push(licenseManager(dependency, pkg))
+        licensePromises.push(licenseManager(dependency, pkg, invalidLicenses))
 
-        insertHierarchies(dependencies, licensePromises, { currentDependency: dependency, rptDependency: modules[module], rootDependencies: modules })
-      }
+        insertHierarchies(dependencies, licensePromises, invalidLicenses, { currentDependency: dependency, rptDependency: element, rootDependencies: modules })
+      })
 
       debug('Finished filtering dependencies')
 
@@ -69,7 +70,7 @@ export default function getDependencies () {
  * @param {Object} dependencies object to store all dependencies
  * @param {Object} module module to search for dependencies to insert hierarchy
 */
-function insertHierarchies (dependencies, licensePromises, {currentDependency, rptDependency, rootDependencies}) {
+function insertHierarchies (dependencies, licensePromises, invalidLicenses, {currentDependency, rptDependency, rootDependencies}) {
   const pkg = rptDependency.package
   const children = rptDependency.children
   const modules = pkg.dependencies
@@ -92,7 +93,7 @@ function insertHierarchies (dependencies, licensePromises, {currentDependency, r
     currentDependency.insertChild(childPkg.name, childVersion)
     dependency.insertPrivateVersion(childVersion)
 
-    licensePromises.push(licenseManager(dependency, childPkg))
+    licensePromises.push(licenseManager(dependency, childPkg, invalidLicenses))
   }
 
   for (let moduleName in modules) {

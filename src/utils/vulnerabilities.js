@@ -4,7 +4,8 @@ import catchifyPromise from './utility-functions'
 import fileManager from './file-manager'
 
 import fetch from 'isomorphic-fetch'
-import semver from 'semver'
+import lodash from 'lodash'
+// import semver from 'semver'
 import {Vulnerability} from '../report_model'
 import RequestBody from '../oss-fetch-body'
 import debugSetup from 'debug'
@@ -29,48 +30,61 @@ const getRequest = body => {
 export default async function getVulnerabilities (dependencies) {
   debug('Checking Vulnerabilities')
 
-  const requestBody = dependencies.map(dependency => {
+  const notFlatRequestBody = dependencies.map(dependency => {
     const versions = [dependency.main_version, ...dependency.private_versions]
-    const minVersion = versions.sort(semver.compare)[0]
 
-    return new RequestBody('npm', dependency.title, minVersion)
+    return versions.map(version => {
+      return new RequestBody('npm', dependency.title, version)
+    })
   })
+
+  const requestBody = lodash.flattenDeep(notFlatRequestBody)
 
   const [fetchError, response] = await catchifyPromise(fetch(getRequest(requestBody)))
   if (fetchError) {
     throw new Error(fetchError.message)
   }
 
+  const [jsonError, body] = await catchifyPromise(response.json())
+
   if (response.status !== 200) {
-    throw new Error('Vulnerabilities Request failed: Status-' + response.status)
+    // throw new Error('Vulnerabilities Request failed: Status-' + response.status)
+    debug('API failed to fetch vulnerabilities: %O', body)
+    dependencies.forEach(elem => {
+      elem.error_info = 'Failed to fetch vulnerabilities'
+    })
+    return dependencies
   }
 
-  const [jsonError, body] = await catchifyPromise(response.json())
   if (jsonError) {
     throw new Error(jsonError.message)
   }
 
   fileManager.writeBuildFile('api-vulnerabilities.json', JSON.stringify(body))
 
-  for (let prop in body) {
-    const vulnerability = body[prop]
-    if (!vulnerability.vulnerabilities) { continue }
+  dependencies.forEach(dependency => {
+    const dependencyVulnerabilities = body.filter(elem => elem.title === dependency.title)
 
-    const vulnerabilities = vulnerability.vulnerabilities.map(elem => {
-      return new Vulnerability(
-        {
-          id: elem.id,
-          title: elem.title,
-          description: elem.description,
-          references: elem.references,
-          versions: elem.versions
-        })
+    dependencyVulnerabilities.forEach(elem => {
+      if (!elem.vulnerabilities) {
+        return
+      }
+
+      elem.vulnerabilities.forEach(vulnerability => {
+        if (!dependency.vulnerabilities.some(depElem => depElem.id === vulnerability.id)) {
+          dependency.vulnerabilities.push(
+            new Vulnerability({
+              id: vulnerability.id,
+              title: vulnerability.title,
+              description: vulnerability.description,
+              references: vulnerability.references,
+              versions: vulnerability.versions
+            }))
+          dependency.vulnerabilities_count += 1
+        }
+      })
     })
-
-    const dependency = dependencies.find(elem => { return elem.title === vulnerability.title })
-    dependency.vulnerabilities = vulnerabilities
-    dependency.vulnerabilities_count = vulnerability.totalVulnerabilities
-  }
+  })
 
   fileManager.writeBuildFile('dependencies-vulnerabilities.json', JSON.stringify(dependencies))
   debug('End process')

@@ -11,7 +11,7 @@ test('check-dependencies-elements', async (done) => {
 
   function check (elem) {
     const isTruthy = elem.title !== undefined && elem.main_version !== undefined &&
-      elem.private_versions !== undefined && elem.parents !== undefined &&
+      elem.private_versions !== undefined && elem.children !== undefined &&
       elem.vulnerabilities !== undefined
     if (!isTruthy) {
       console.log('Hello')

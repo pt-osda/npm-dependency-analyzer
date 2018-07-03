@@ -5,9 +5,10 @@ import fileManager from './file-manager'
 import {License} from '../report_model'
 
 import correct from 'spdx-correct'
-import fetch from 'isomorphic-fetch'
 import lodash from 'lodash'
 import debugSetup from 'debug'
+import nlf from 'nlf'
+import licenseChecker from 'license-checker'
 
 const debug = debugSetup('Licenses')
 
@@ -19,45 +20,6 @@ function filterLicenseInFile (fileData) {
   }
 
   return null
-}
-
-async function getGitHubLicense (pkg, cb) {
-  const repository = pkg.repository
-  if (repository !== undefined && repository.type === 'git') {
-    const packageRepo = repository.url.match(licenseUtility.gitHubRegex)
-    if (packageRepo === null) {
-      return null
-    }
-
-    const splitRepo = packageRepo[1].split('/')
-    const owner = splitRepo[1]
-    const repo = splitRepo[2].replace('.git', '')
-    fetch(licenseUtility.gitHubLicenseApiUrl(owner, repo))
-      .then(response => {
-        if (response.headers.get('X-RateLimit-Remaining') === '0') {
-          debug('No more requests available')
-          return null
-        }
-
-        if (response.status !== 200) {
-          debug(`No repo: owner- ${owner} | repo- ${repo}) \n\turl- ${repository.url}`)
-          return null
-        }
-
-        response.json()
-          .then(body => {
-            if (body.license) {
-              return new License(body.license.spdx_id, licenseUtility.possibleOrigins['githubLicense'])
-            }
-          })
-          .catch(err => {
-            debug('Error with response.json() license: ' + err)
-          })
-      })
-      .catch(err => {
-        debug('Error with fetch: ' + err)
-      })
-  }
 }
 
 function parseLicense (licenseName, pkg) {
@@ -128,10 +90,13 @@ async function getLocalLicense (pkg) {
   })
 }
 
-export default function getLicense (dependency, depPkg) { // TODO: Use package license-checker to get license for each dependency
+export default function getLicense (dependency, depPkg, invalidLicenses) { // TODO: Use package license-checker to get license for each dependency
   return getLocalLicense(depPkg)
     .then(license => {
       if (license) {
+        if (invalidLicenses.some(elem => elem === license.spdx_id)) {
+          license.valid = false
+        }
         if (lodash.isArray(license)) {
           dependency.licenses.push(...license)
         } else {
