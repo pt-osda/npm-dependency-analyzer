@@ -11,7 +11,7 @@ import bunyan from 'bunyan'
 const logger = bunyan.createLogger({name: 'Index'})
 
 const getRequest = body => {
-  return new Request('http://localhost:8080/report', {
+  return new Request('http://35.234.147.77/report', {
     headers: {
       'Content-Type': 'application/json'
     },

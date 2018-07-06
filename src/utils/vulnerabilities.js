@@ -13,7 +13,7 @@ import bunyan from 'bunyan'
 const logger = bunyan.createLogger({name: 'Fetch-Vulnerabilities'})
 
 const getRequest = (body, cacheTime) => {
-  return new Request('http://localhost:8080/npm/dependency/vulnerabilities', {
+  return new Request('http://35.234.147.77/npm/dependency/vulnerabilities', {
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': `max-age=${cacheTime}`

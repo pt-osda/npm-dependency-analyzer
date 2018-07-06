@@ -1,6 +1,6 @@
 {
   "name": "npm-dependency-analyzer",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Plugin to validate dependencies, concerning their license and vulnerabities",
   "main": "index.js",
   "bin": {

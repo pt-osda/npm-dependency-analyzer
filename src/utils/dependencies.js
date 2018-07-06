@@ -103,8 +103,17 @@ function insertHierarchies (dependencies, licensePromises, invalidLicenses, {cur
   }
 
   for (let moduleName in modules) {
-    const simpleVersion = rootDependencies.find(elem => elem.package.name === moduleName).package.version
-    const version = semver.coerce(simpleVersion).raw
-    currentDependency.insertChild(moduleName, version)
+    let simpleVersion = ''
+    logger.info(`Dependency ${currentDependency.title}:${currentDependency.main_version} with module ${moduleName}`)
+    const rootDependency = rootDependencies.find(elem => elem.package.name === moduleName)
+    const parentDependency = rptDependency.parent.children.find(elem => elem.package.name === moduleName)
+    if (rootDependency) {
+      simpleVersion = rootDependency.package.version
+    } else if (parentDependency) {
+      simpleVersion = parentDependency.package.version
+    }
+
+    logger.info('Found version %O', simpleVersion)
+    currentDependency.insertChild(moduleName, simpleVersion)
   }
 }
