@@ -108,3 +108,41 @@ export default function getLicense (dependency, depPkg, invalidLicenses) { // TO
       throw new Error(err.message)
     })
 }
+
+/*
+function insertLicenseinDependency (dependency, license, invalidLicenses) {
+  if (lodash.isArray(license)) {
+    license.forEach(elem => {
+      const l = new License(elem, `Found in package.json file with version ${dependency.main_version}`)
+      if (invalidLicenses.some(invalid => invalid === elem)) {
+        l.valid = false
+      }
+      dependency.insertLicense(l)
+    })
+  } else {
+    const l = new License(license, `Found in package.json file with version ${dependency.main_version}`)
+    if (invalidLicenses.some(invalid => invalid === license)) {
+      l.valid = false
+    }
+    dependency.insertLicense(l)
+  }
+}
+
+export default function getLicense (dependency, rptDependency, invalidLicenses) { // TODO: Use package license-checker to get license for each dependency
+  return new Promise((resolve, reject) => {
+    const pkg = rptDependency.package
+    licenseChecker.init({start: rptDependency.path}, (err, data) => {
+      if (err) {
+        reject(err)
+      } else {
+        const license = data[`${pkg.name}@${pkg.version}`].licenses
+        if (!license) {
+          return resolve()
+        }
+        insertLicenseinDependency(dependency, license, invalidLicenses)
+        resolve()
+      }
+    })
+  })
+}
+*/

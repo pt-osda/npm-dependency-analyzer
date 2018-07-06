@@ -5,11 +5,10 @@ import getDependencies from './utils/dependencies'
 import {Report} from './report_model'
 import fileManager from './utils/file-manager'
 import catchifyPromise from './utils/utility-functions'
-import debugSetup from 'debug'
 import fetch from 'isomorphic-fetch'
-import licenseManager from './utils/licenses'
+import bunyan from 'bunyan'
 
-const debug = debugSetup('Index')
+const logger = bunyan.createLogger({name: 'Index'})
 
 const getRequest = body => {
   return new Request('http://localhost:8080/report', {
@@ -37,6 +36,7 @@ function generateReport (policyData, pkg, dependencies) {
   report.insertDependencies(dependencies)
 
   fileManager.writeBuildFile('report.json', JSON.stringify(report))
+  logger.info('Generated report')
 
   return report
 }
@@ -45,22 +45,32 @@ function generateReport (policyData, pkg, dependencies) {
  * Analyzes license and vulnerabilities from all dependencies
  */
 export default async function (policyData) {
-  debug('Getting all dependencies')
+  logger.info('Started process')
 
   const [dependenciesError, {pkg, dependencies}] = await catchifyPromise(getDependencies(policyData.invalid_licenses))
   if (dependenciesError) {
-    debug('Exiting with error getting dependencies')
+    logger.error('Exiting with error getting dependencies')
     throw new Error(`DependenciesError: ${dependenciesError.message}`)
   }
 
-  const [vulnerabilitiesError, deps] = await catchifyPromise(vulnerabilities(dependencies))
+  const [vulnerabilitiesError, deps] = await catchifyPromise(vulnerabilities(dependencies, policyData.api_cache_time))
   if (vulnerabilitiesError) {
+    logger.error('Exiting with error getting vulnerabilities')
     throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
   }
   const report = generateReport(policyData, pkg, deps)
 
-  const [reportError] = await catchifyPromise(fetch(getRequest(report)))
+  const [reportError, response] = await catchifyPromise(fetch(getRequest(report)))
   if (reportError) {
-    throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
+    logger.error('Exiting with error sending the report')
+    throw new Error(`VulnerabilityError: ${vulnerabilitiesError}`)
+  }
+
+  if (response.status === 200 || response.status === 201) {
+    logger.info('Report API request ended successfully')
+    logger.info('Ended process successfully')
+  } else {
+    logger.warn(`Report API request ended unsuccessfully. Status code: ${response.status}`)
+    logger.info('Ended process unsuccessfully')
   }
 }

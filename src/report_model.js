@@ -71,6 +71,12 @@ module.exports.Dependency = class Dependency {
       }
     }
   }
+
+  insertLicense (license) {
+    if (!this.licenses.some(elem => elem.spdx_id === license.spdx_id)) {
+      this.licenses.push(license)
+    }
+  }
 }
 
 module.exports.Vulnerability = class Vulnerability {

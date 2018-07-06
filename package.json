@@ -1,6 +1,6 @@
 {
   "name": "npm-dependency-analyzer",
-  "version": "0.4.2",
+  "version": "0.5.3",
   "description": "Plugin to validate dependencies, concerning their license and vulnerabities",
   "main": "index.js",
   "bin": {
@@ -8,12 +8,12 @@
   },
   "scripts": {
     "start:dev": "nodemon --exec npm run lint",
-    "debug": "DEBUG=* node ./bin/npm-dependency-analyzer.js",
+    "debug": "node ./bin/npm-dependency-analyzer.js | bunyan",
     "clean": "rimraf build/ && rimraf lib/",
     "prebuild": "npm install && npm run clean",
-    "build": "npm run lint && babel src -d lib && npm test",
+    "build": "npm run lint && babel src -d lib",
     "lint": "standard src/ --fix",
-    "test": "jest"
+    "test": "jest | bunyan"
   },
   "engines": {
     "node": ">=8.0.0",
@@ -27,6 +27,7 @@
     "build-plugin"
   ],
   "dependencies": {
+    "bunyan": "^1.8.12",
     "debug": "^3.1.0",
     "isomorphic-fetch": "^2.2.1",
     "license-checker": "^20.1.0",

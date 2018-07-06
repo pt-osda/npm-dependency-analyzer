@@ -8,14 +8,15 @@ import lodash from 'lodash'
 // import semver from 'semver'
 import {Vulnerability} from '../report_model'
 import RequestBody from '../oss-fetch-body'
-import debugSetup from 'debug'
+import bunyan from 'bunyan'
 
-const debug = debugSetup('Vulnerabilities')
+const logger = bunyan.createLogger({name: 'Fetch-Vulnerabilities'})
 
-const getRequest = body => {
+const getRequest = (body, cacheTime) => {
   return new Request('http://localhost:8080/npm/dependency/vulnerabilities', {
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Cache-Control': `max-age=${cacheTime}`
     },
     method: 'POST',
     body: JSON.stringify(body)
@@ -27,8 +28,8 @@ const getRequest = body => {
  * Gets all vulnerabilities on the current project
  * Need to do POST and send all packages because sending a request for each dependency breaks the server for a bit
  */
-export default async function getVulnerabilities (dependencies) {
-  debug('Checking Vulnerabilities')
+export default async function getVulnerabilities (dependencies, cacheTime) {
+  logger.info('Fetching vulnerabilities')
 
   const notFlatRequestBody = dependencies.map(dependency => {
     const versions = [dependency.main_version, ...dependency.private_versions]
@@ -40,7 +41,7 @@ export default async function getVulnerabilities (dependencies) {
 
   const requestBody = lodash.flattenDeep(notFlatRequestBody)
 
-  const [fetchError, response] = await catchifyPromise(fetch(getRequest(requestBody)))
+  const [fetchError, response] = await catchifyPromise(fetch(getRequest(requestBody, cacheTime)))
   if (fetchError) {
     throw new Error(fetchError.message)
   }
@@ -49,7 +50,7 @@ export default async function getVulnerabilities (dependencies) {
 
   if (response.status !== 200) {
     // throw new Error('Vulnerabilities Request failed: Status-' + response.status)
-    debug('API failed to fetch vulnerabilities: %O', body)
+    logger.warn('API failed to fetch vulnerabilities: %O', body)
     dependencies.forEach(elem => {
       elem.error_info = 'Failed to fetch vulnerabilities'
     })
@@ -87,6 +88,6 @@ export default async function getVulnerabilities (dependencies) {
   })
 
   fileManager.writeBuildFile('dependencies-vulnerabilities.json', JSON.stringify(dependencies))
-  debug('End process')
+  logger.info('Finished fetching vulnerabilities')
   return dependencies
 }

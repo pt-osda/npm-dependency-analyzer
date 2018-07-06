@@ -4,5 +4,6 @@
   "organization": "pt-osda",
   "repo": "npm-dependency-analyzer",
   "repo_owner": "pt-osda",
-  "invalid_licenses": ["MIT"]
+  "invalid_licenses": ["MIT"],
+  "api_cache_time": 10
 }

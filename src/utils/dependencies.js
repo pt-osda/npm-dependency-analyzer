@@ -8,26 +8,32 @@ import rpt from 'read-package-tree'
 // import lodash from 'lodash'
 
 import semver from 'semver'
-import debugSetup from 'debug'
+import bunyan from 'bunyan'
 
-const debug = debugSetup('Dependencies')
+const logger = bunyan.createLogger({name: 'Fetch-Dependencies'})
 
 /**
  * Gets all dependencies and builds an object after filtering into a ReportDependency
  * @param {Function} cb callback called when an error occurs or after filtering all dependencies
 */
 export default function getDependencies (invalidLicenses) {
-  debug('Get dependencies')
+  logger.info('Fetching dependencies')
   return new Promise((resolve, reject) => {
     const dependencies = {}
     const licensePromises = []
 
     rpt('./', (err, data) => {
       if (err) {
-        debug('Error getting dependencies')
+        logger.error('Error fetching dependencies')
         return reject(err)
       }
       const modules = data.children
+      fileManager.writeBuildFile('rpt-dependencies.json', JSON.stringify(modules.map(elem => {
+        return {
+          title: elem.name,
+          path: elem.path
+        }
+      })))
       const directDependencies = { ...data.package.dependencies, ...data.package.devDependencies }
 
       modules.forEach(element => {
@@ -49,16 +55,17 @@ export default function getDependencies (invalidLicenses) {
         insertHierarchies(dependencies, licensePromises, invalidLicenses, { currentDependency: dependency, rptDependency: element, rootDependencies: modules })
       })
 
-      debug('Finished filtering dependencies')
+      logger.info('Finished fetching dependencies')
 
       Promise.all(licensePromises)
         .then(() => {
+          logger.info('Finished filtering dependencies')
           const nonOptionalDependencies = Object.values(dependencies).filter(val => { return val.title !== undefined })
           fileManager.writeBuildFile('only-dependencies.json', JSON.stringify(nonOptionalDependencies))
           resolve({ pkg: data.package, dependencies: nonOptionalDependencies })
         })
         .catch(err => {
-          debug('Error getting licenses')
+          logger.error('Error getting licenses')
           reject(err)
         })
     })
@@ -71,9 +78,8 @@ export default function getDependencies (invalidLicenses) {
  * @param {Object} module module to search for dependencies to insert hierarchy
 */
 function insertHierarchies (dependencies, licensePromises, invalidLicenses, {currentDependency, rptDependency, rootDependencies}) {
-  const pkg = rptDependency.package
   const children = rptDependency.children
-  const modules = pkg.dependencies
+  const modules = rptDependency.package.dependencies
 
   for (let child in children) {
     const childPkg = children[child].package
@@ -93,7 +99,7 @@ function insertHierarchies (dependencies, licensePromises, invalidLicenses, {cur
     currentDependency.insertChild(childPkg.name, childVersion)
     dependency.insertPrivateVersion(childVersion)
 
-    licensePromises.push(licenseManager(dependency, childPkg, invalidLicenses))
+    licensePromises.push(licenseManager(dependency, rptDependency.package, invalidLicenses))
   }
 
   for (let moduleName in modules) {
