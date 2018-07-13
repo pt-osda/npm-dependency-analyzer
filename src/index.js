@@ -13,7 +13,8 @@ const logger = bunyan.createLogger({name: 'Index'})
 const getRequest = body => {
   return new Request('http://35.234.147.77/report', {
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.CENTRAL_SERVER_TOKEN}`
     },
     method: 'POST',
     body: JSON.stringify(body)
@@ -29,7 +30,8 @@ function generateReport (policyData, pkg, dependencies) {
     timestamp: new Date(Date.now()).toISOString(),
     organization: policyData.organization,
     repo: policyData.repo,
-    repo_owner: policyData.repo_owner
+    repo_owner: policyData.repo_owner,
+    admin: policyData.admin
   }
 
   const report = new Report(reportOptions)

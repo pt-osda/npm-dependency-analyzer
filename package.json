@@ -1,6 +1,6 @@
 {
   "name": "npm-dependency-analyzer",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Plugin to validate dependencies, concerning their license and vulnerabities",
   "main": "index.js",
   "bin": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start:dev": "nodemon --exec npm run lint",
-    "debug": "node ./bin/npm-dependency-analyzer.js | bunyan",
+    "debug": "node ./bin/npm-dependency-analyzer | bunyan",
     "clean": "rimraf build/ && rimraf lib/",
     "prebuild": "npm install && npm run clean",
     "build": "npm run lint && babel src -d lib",

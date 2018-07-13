@@ -7,13 +7,76 @@
 
 Analyze Open Source dependencies in a project developed on a Node.js environment. This plugin analyzes all dependencies of a project to check for vulnerabilities and licenses.
 
+# Requirements
+* [Download and install Node.js](https://nodejs.org/en/download/) with version 8.0.0 or higher.
+* Projects **MUST** have a policy file named **.osda**
+
+<details><summary>Policy file structure</summary>
+<p>
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Project Policy",
+  "description": "A policy with a project related configurations and \tinformation",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "description": "Id of the project to present in the report",
+      "type": "string"
+    },
+    "project_name": {
+      "description": "Name of the project to present in the report",
+      "type": "string"
+    },
+    "project_version": {
+      "description": "Version of the project to present in the report",
+      "type": "string"
+    },
+    "project_description": {
+      "description": "Description of the project to present in the report",
+      "type": "string"
+    },
+    "organization": {
+      "description": "The organization the project belongs to",
+      "type": "string"
+    },
+    "repo": {
+      "description": "The repository in github the project belongs to",
+      "type": "string"
+    },
+    "repo_owner": {
+      "description": "The owner of the repository the project belongs to",
+      "type": "string"
+    },
+    "admin": {
+      "description": "The username of the administrator of the project (Only used in project first report)",
+      "type": "string"
+    },
+    "invalid_licenses": {
+      "description": "The names of all invalid licenses. Default value is an empty collection",
+      "type": "array"
+    },
+    "fail": {
+      "description": "Indicates if the build should fail in case a vulnerability is found. Default value is false",
+      "type": "boolean"
+    },
+    "api_cache_time": {
+      "description": "Indicates, in seconds, the amount of time the cached results should be considered valid. If 0 (which is the default value), there are no restrictions on the lifetime of cached results",
+      "type": "number"
+    }
+  },
+  "required": ["project_id", "project_name", "admin"]
+}
+```
+
+</p>
+</details>
+
 ## Installation
 
 This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/).
-
-Before installing, [download and install Node.js](https://nodejs.org/en/download/).
-Node.js 4.0.0 or higher is required.
+[npm registry](https://www.npmjs.com/package/npm-dependency-analyzer).
 
 Installation is done using the
 [`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
@@ -23,12 +86,12 @@ Installation is done using the
 
 ## How to Use
 
-:warning: In order for the plugin to be executed successfully, it is needed by the user to [install all dependencies](https://docs.npmjs.com/cli/install) before using any functionality provided:
+:warning: In order for the plugin to be executed successfully, it needs to have all dependencies installed by the user [install all dependencies](https://docs.npmjs.com/cli/install) before using any functionality provided:
 ```bash
 $ npm install
 ```
 
-This plugin provides a command to be executed in a [npm script](https://docs.npmjs.com/misc/scripts) named [***npm-dependency-analyzer***](https://github.com/pt-osda/npm-dependency-analyzer/blob/master/bin/npm-dependency-analyzer.js).
+This plugin provides an executable that is placed into ["node_modules/.bin"](https://docs.npmjs.com/files/package.json#bin) folder of any project it is dependent. This executable can be used in the [script property](https://docs.npmjs.com/files/package.json#scripts).
 This command is to be used in the build process of a project, as demonstrated in the example below of a package.json:
 ```json
 {
@@ -46,8 +109,8 @@ This command is to be used in the build process of a project, as demonstrated in
         "test":"mocha"
     },
     "engines":{
-        "node":">=4.0.0",
-        "npm":">=2.0.0"
+        "node":">=8.0.0",
+        "npm":">=5.7.0"
     },
     "keywords":[
         "Example",
@@ -71,4 +134,4 @@ This command is to be used in the build process of a project, as demonstrated in
     }
 }
 ```
-After making the necessary adjustments to the package.json, when running the build script the plugin will execute and generate a report based on the findings, storing it on a build folder at the root of the project.
+After making the necessary adjustments to the package.json, the execution of the build script will have the plugin generate a report based on the findings, storing it on a build folder at the root of the project.

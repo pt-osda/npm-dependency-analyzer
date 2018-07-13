@@ -10,9 +10,9 @@ function checkParams (ctorName, required = [], params = {}) {
   }
 }
 
-module.exports.Report = class Report {
+export class Report {
   constructor (options) {
-    checkParams('Report', ['id', 'name', 'version', 'description', 'timestamp'], options)
+    checkParams('Report', ['id', 'name', 'version', 'description', 'timestamp', 'admin'], options)
     Object.assign(this, options)
     this.dependencies = []
   }
@@ -20,12 +20,16 @@ module.exports.Report = class Report {
   insertDependencies (dependencies) {
     this.dependencies = dependencies
   }
+
+  initializeWithError (errorInfo) {
+    this.error_info = errorInfo
+  }
 }
 
 /**
  * Class representing the element Dependency on the report generated
  */
-module.exports.Dependency = class Dependency {
+export class Dependency {
   /**
    * Constructor for a Dependency. Initializes all properties that cannot be null (are arrays) and verifies required properties
    * @param {Object} options This object can have 0 to 2 properties, them being title and main_version
@@ -51,11 +55,6 @@ module.exports.Dependency = class Dependency {
     this.direct = options.direct
   }
 
-  initializeWithError (options) {
-    checkParams('Dependency', ['title', 'error_info'], options)
-    Object.assign(this, options)
-  }
-
   insertChild (dependencyName, dependencyVersion) {
     this.children.push(`${dependencyName}:${dependencyVersion}`)
   }
@@ -63,12 +62,10 @@ module.exports.Dependency = class Dependency {
   insertPrivateVersion (dependencyVersion) {
     const index = lodash.indexOf(this.private_versions, dependencyVersion)
 
-    if (this.main_version !== dependencyVersion) {
-      if (index === -1) {
-        this.private_versions.push(dependencyVersion)
-      } else {
-        lodash.pullAt(this.private_versions, index)
-      }
+    if (index === -1) {
+      this.private_versions.push(dependencyVersion)
+    } else {
+      lodash.pullAt(this.private_versions, index)
     }
   }
 
@@ -79,7 +76,7 @@ module.exports.Dependency = class Dependency {
   }
 }
 
-module.exports.Vulnerability = class Vulnerability {
+export class Vulnerability {
   constructor (options) {
     if (options) {
       checkParams('Vulnerability', ['id', 'title', 'description', 'references', 'versions'], options)
@@ -88,7 +85,7 @@ module.exports.Vulnerability = class Vulnerability {
   }
 }
 
-module.exports.License = class License {
+export class License {
   constructor (title, origin) {
     this.spdx_id = title
     this.source = origin
