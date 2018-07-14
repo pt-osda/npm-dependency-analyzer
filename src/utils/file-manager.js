@@ -1,8 +1,13 @@
 'use strict'
 
-const fs = require('fs')
+import fs from 'fs'
 
-function writeBuildFile (fileName, fileData) {
+/**
+ * Writes into a file asynchronously
+ * @param {String} fileName the name of the file to write to
+ * @param {String} fileData the data to be written
+ */
+export default function writeBuildFile (fileName, fileData) {
   fs.stat('./build', (err, stats) => {
     if (err) {
       fs.mkdir('./build', err => {
@@ -15,25 +20,4 @@ function writeBuildFile (fileName, fileData) {
       fs.writeFileSync(`./build/${fileName}`, fileData)
     }
   })
-}
-
-function readFile (filePath, cb) {
-  fs.stat(filePath, (err, stats) => {
-    if (err) {
-      return cb(err)
-    }
-    if (stats.isFile) {
-      fs.readFile(filePath, 'utf-8', (err, data) => {
-        if (err) {
-          return cb(err)
-        }
-        return cb(null, data)
-      })
-    }
-  })
-}
-
-module.exports = {
-  writeBuildFile,
-  readFile
 }

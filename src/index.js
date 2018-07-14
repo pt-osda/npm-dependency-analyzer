@@ -7,11 +7,15 @@ import getVulnerabilities from './utils/vulnerabilities'
 import getDependencies from './utils/dependencies'
 import getLicenses from './utils/licenses'
 import {Report} from './report_model'
-import fileManager from './utils/file-manager'
+import writeFile from './utils/file-manager'
 import {catchifyPromise} from './utils/utility-functions'
 
 const logger = bunyan.createLogger({name: 'Index'})
 
+/**
+ * Creates a request for the report
+ * @param {Object} body body of the request
+ */
 const getRequest = body => {
   return new Request('http://35.234.151.254/report', {
     headers: {
@@ -47,7 +51,7 @@ function generateReport (policyData, pkg, dependencies, error) {
   const report = new Report(reportOptions)
   report.insertDependencies(dependencies)
 
-  fileManager.writeBuildFile('report.json', JSON.stringify(report))
+  writeFile('report.json', JSON.stringify(report))
   logger.info('Generated report')
 
   return report

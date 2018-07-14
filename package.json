@@ -11,7 +11,7 @@
     "debug": "node ./bin/npm-dependency-analyzer | bunyan",
     "clean": "rimraf build/ && rimraf lib/",
     "prebuild": "npm install && npm run clean",
-    "build": "npm run lint && babel src -d lib",
+    "build": "npm run lint && babel src -d lib && npm test",
     "lint": "standard src/ --fix",
     "test": "jest | bunyan"
   },

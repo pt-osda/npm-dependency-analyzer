@@ -10,6 +10,11 @@ import RequestBody from '../oss-fetch-body'
 
 const logger = bunyan.createLogger({name: 'Fetch-Vulnerabilities'})
 
+/**
+ * Creates a request to fetch vulnerabilites
+ * @param {Object} body body of the request
+ * @param {Number} cacheTime time for the cache in the proxy
+ */
 const getRequest = (body, cacheTime) => {
   return new Request('http://35.234.151.254/npm/dependency/vulnerabilities', {
     headers: {
