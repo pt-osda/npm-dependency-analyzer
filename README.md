@@ -72,7 +72,7 @@ Analyze Open Source dependencies in a project developed on a Node.js environment
 
 </p>
 </details>
-
+Before using the plugin, the developer needs to create a user in the central system: http://35.234.147.77. This user is gonna be designated as admin of the project by inserting the username into the admin field of the policy file. Once the user is created, a token can be created through the following link: http://35.234.147.77/user. The generated token must be added as an environment variable with the name CENTRAL_SERVER_TOKEN.
 ## Installation
 
 This is a [Node.js](https://nodejs.org/en/) module available through the
@@ -104,7 +104,7 @@ This command is to be used in the build process of a project, as demonstrated in
     },
     "scripts":{
         "prebuild":"npm install && rimraf build/",
-        "build":"npm run lint && npm test && npm-dependency-analyzer",
+        "build":"npm run lint && npm test && npm-dependency-analyzer | bunyan",
         "lint":"eslint .",
         "test":"mocha"
     },
@@ -134,4 +134,5 @@ This command is to be used in the build process of a project, as demonstrated in
     }
 }
 ```
-After making the necessary adjustments to the package.json, the execution of the build script will have the plugin generate a report based on the findings, storing it on a build folder at the root of the project.
+This module uses the logging library bunyan. Every log will be represented as a json object. Bunyan besides providing a Logging API, it provides a CLI tool that parses the json and prettifies it. As shown in the code above the developer can pipe the output of the executable to the cli tool -> "npm-dependency-analyzer | bunyan".
+After making the necessary adjustments to the package.json, the execution of the build script will have the plugin generate a report based on the findings. This report will then be sent to the central system and stored there. Then the report can be accessed through the following link: http://35.234.147.77/

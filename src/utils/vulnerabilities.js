@@ -1,18 +1,17 @@
 'use strict'
 
-import catchifyPromise from './utility-functions'
-import fileManager from './file-manager'
-
 import fetch from 'isomorphic-fetch'
-import lodash from 'lodash'
+import {flattenDeep} from 'lodash'
+import bunyan from 'bunyan'
+
+import {catchifyPromise} from './utility-functions'
 import {Vulnerability} from '../report_model'
 import RequestBody from '../oss-fetch-body'
-import bunyan from 'bunyan'
 
 const logger = bunyan.createLogger({name: 'Fetch-Vulnerabilities'})
 
 const getRequest = (body, cacheTime) => {
-  return new Request('http://35.234.147.77/npm/dependency/vulnerabilities', {
+  return new Request('http://35.234.151.254/npm/dependency/vulnerabilities', {
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': `max-age=${cacheTime || 0}`,
@@ -29,7 +28,7 @@ const getRequest = (body, cacheTime) => {
  */
 export default async function getVulnerabilities (dependencies, cacheTime) {
   logger.info('Fetching vulnerabilities')
-  logger.info('ENV:' + process.env.CENTRAL_SERVER_TOKEN)
+
   const notFlatRequestBody = dependencies.map(dependency => {
     const versions = [dependency.main_version, ...dependency.private_versions]
 
@@ -38,24 +37,25 @@ export default async function getVulnerabilities (dependencies, cacheTime) {
     })
   })
 
-  const requestBody = lodash.flattenDeep(notFlatRequestBody)
+  const requestBody = flattenDeep(notFlatRequestBody)
 
   const [fetchError, response] = await catchifyPromise(fetch(getRequest(requestBody, cacheTime)))
   if (fetchError) {
-    throw new Error(fetchError.message)
+    logger.warn(`Vulnerabilities Request failed: %O`, fetchError.message)
+    throw new Error(fetchError)
   }
 
   const [jsonError, body] = await catchifyPromise(response.json())
 
   if (response.status !== 200) {
-    throw new Error('Vulnerabilities Request failed: ' + JSON.stringify(body))
+    logger.warn(`Vulnerabilities Request failed: Status - %s; Reason - %O`, response.status, body)
+    throw new Error(body)
   }
 
   if (jsonError) {
+    logger.warn(`Vulnerabilities Request failed: Status - %s; Reason - %O`, response.status, jsonError)
     throw new Error(jsonError.message)
   }
-
-  fileManager.writeBuildFile('api-vulnerabilities.json', JSON.stringify(body))
 
   dependencies.forEach(dependency => {
     const dependencyVulnerabilities = body.filter(elem => elem.title === dependency.title)
@@ -74,7 +74,6 @@ export default async function getVulnerabilities (dependencies, cacheTime) {
     })
   })
 
-  fileManager.writeBuildFile('dependencies-vulnerabilities.json', JSON.stringify(dependencies))
   logger.info('Finished fetching vulnerabilities')
   return dependencies
 }

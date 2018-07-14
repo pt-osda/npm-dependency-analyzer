@@ -7,13 +7,16 @@
  * and writes it's content to a new file on a build folder. After this gets all vulnerabilities known and licenses.
  */
 const checkProject = require('../lib/index').default
-const debug = require('debug')('Main')
+const logger = require('bunyan').createLogger({name: 'Main'})
+const utils = require('../lib/utils/utility-functions')
 const fs = require('fs')
 
 fs.readFile('.osda', 'UTF-8', (err, data) => {
   if (err) {
-    debug('Error encountered trying to read .osda file - ' + err)
+    logger.error('Error encountered trying to read .osda file - ' + err)
     throw err
   }
-  checkProject(JSON.parse(data))
+  const policy = JSON.parse(data)
+  utils.checkParams('Policy', ['project_id', 'project_name', 'admin'], policy)
+  checkProject(policy)
 })

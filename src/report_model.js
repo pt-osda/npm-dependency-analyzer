@@ -2,13 +2,7 @@
 
 import lodash from 'lodash'
 
-function checkParams (ctorName, required = [], params = {}) {
-  const missing = required.filter(param => !(param in params))
-
-  if (missing.length) {
-    throw new Error(`${ctorName}() Missing required parameter(s): ${missing.join(', ')}`)
-  }
-}
+import {checkParams} from './utils/utility-functions'
 
 export class Report {
   constructor (options) {

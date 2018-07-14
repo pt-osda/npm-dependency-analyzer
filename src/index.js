@@ -1,17 +1,19 @@
 'use strict'
 
-import vulnerabilities from './utils/vulnerabilities'
-import getDependencies from './utils/dependencies'
-import {Report} from './report_model'
-import fileManager from './utils/file-manager'
-import catchifyPromise from './utils/utility-functions'
 import fetch from 'isomorphic-fetch'
 import bunyan from 'bunyan'
+
+import getVulnerabilities from './utils/vulnerabilities'
+import getDependencies from './utils/dependencies'
+import getLicenses from './utils/licenses'
+import {Report} from './report_model'
+import fileManager from './utils/file-manager'
+import {catchifyPromise} from './utils/utility-functions'
 
 const logger = bunyan.createLogger({name: 'Index'})
 
 const getRequest = body => {
-  return new Request('http://35.234.147.77/report', {
+  return new Request('http://35.234.151.254/report', {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.CENTRAL_SERVER_TOKEN}`
@@ -21,7 +23,7 @@ const getRequest = body => {
   })
 }
 
-function generateReport (policyData, pkg, dependencies) {
+function generateReport (policyData, pkg, dependencies, error) {
   const reportOptions = {
     id: policyData.project_id,
     name: policyData.project_name,
@@ -31,7 +33,8 @@ function generateReport (policyData, pkg, dependencies) {
     organization: policyData.organization,
     repo: policyData.repo,
     repo_owner: policyData.repo_owner,
-    admin: policyData.admin
+    admin: policyData.admin,
+    error_info: error
   }
 
   const report = new Report(reportOptions)
@@ -49,30 +52,38 @@ function generateReport (policyData, pkg, dependencies) {
 export default async function (policyData) {
   logger.info('Started process')
 
-  const [dependenciesError, {pkg, dependencies}] = await catchifyPromise(getDependencies(policyData.invalid_licenses))
+  const [dependenciesError, {pkg, dependencies}] = await catchifyPromise(getDependencies(policyData.invalid_licenses || []))
   if (dependenciesError) {
     logger.error('Exiting with error getting dependencies')
     throw new Error(`DependenciesError: ${dependenciesError.message}`)
   }
 
-  const [vulnerabilitiesError, deps] = await catchifyPromise(vulnerabilities(dependencies, policyData.api_cache_time))
-  if (vulnerabilitiesError) {
-    logger.error('Exiting with error getting vulnerabilities')
-    throw new Error(`VulnerabilityError: ${vulnerabilitiesError.message}`)
+  const [licenseError, dependenciesWithLicenses] = await catchifyPromise(getLicenses(dependencies, policyData.invalid_licenses || []))
+  if (licenseError) {
+    logger.error('Exiting with error getting dependencies')
+    throw new Error(`LicensesError: ${dependenciesError.message}`)
   }
-  const report = generateReport(policyData, pkg, deps)
+
+  const [vulnerabilitiesError, deps] = await catchifyPromise(getVulnerabilities(dependenciesWithLicenses, policyData.api_cache_time || 0))
+
+  const report = generateReport(policyData, pkg, deps, vulnerabilitiesError)
 
   const [reportError, response] = await catchifyPromise(fetch(getRequest(report)))
   if (reportError) {
     logger.error('Exiting with error sending the report')
-    throw new Error(`VulnerabilityError: ${vulnerabilitiesError}`)
+    throw new Error(`ReportError: ${vulnerabilitiesError}`)
   }
 
   if (response.status === 200 || response.status === 201) {
     logger.info('Report API request ended successfully')
-    logger.info('Ended process successfully')
   } else {
-    logger.warn(`Report API request ended unsuccessfully. Status code: ${response.status}`)
-    logger.info('Ended process unsuccessfully')
+    logger.error(`Report API request ended unsuccessfully. Status code: ${response.status}`)
+  }
+
+  if (policyData.fail === true && report.dependencies.some(elem => elem.vulnerabilities_count > 0)) {
+    logger.error('Process ended unsuccessfully')
+    throw new Error('Project has vulnerabilities and has fail property on policy as true')
+  } else {
+    logger.info('Process ended successfully')
   }
 }

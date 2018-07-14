@@ -1,10 +1,10 @@
 {
   "project_id": "pt-osda-npm-dependency-analyzer",
   "project_name": "policy-npm-dependency-analyzer",
-  "organization": "pt-osda",
+  
+  "admin": "test","organization": "pt-osda",
   "repo": "npm-dependency-analyzer",
   "repo_owner": "pt-osda",
-  "admin": "test",
   "invalid_licenses": ["MIT"],
   "api_cache_time": 10
 }

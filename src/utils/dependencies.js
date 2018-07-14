@@ -1,11 +1,9 @@
 'use strict'
 
-import {Dependency} from '../report_model'
-import licenseManager from './licenses'
-import fileManager from './file-manager'
-
 import rpt from 'read-package-tree'
 import bunyan from 'bunyan'
+
+import {Dependency} from '../report_model'
 
 const logger = bunyan.createLogger({name: 'Fetch-Dependencies'})
 
@@ -13,11 +11,10 @@ const logger = bunyan.createLogger({name: 'Fetch-Dependencies'})
  * Gets all dependencies and builds an object after filtering into a ReportDependency
  * @param {Function} cb callback called when an error occurs or after filtering all dependencies
 */
-export default function getDependencies (invalidLicenses) {
+export default function getDependencies () {
   logger.info('Fetching dependencies')
   return new Promise((resolve, reject) => {
     const dependencies = {}
-    const licensePromises = []
 
     rpt('./', (err, data) => {
       if (err) {
@@ -41,24 +38,12 @@ export default function getDependencies (invalidLicenses) {
           dependencies[pkg.name] = dependency
         }
 
-        licensePromises.push(licenseManager(dependency, element.package, invalidLicenses))
-
-        insertHierarchies(dependencies, licensePromises, invalidLicenses, { currentDependency: dependency, rptDependency: element, rootDependencies: modules })
+        insertHierarchies(dependencies, { currentDependency: dependency, rptDependency: element, rootDependencies: modules })
       })
 
       logger.info('Finished fetching dependencies')
 
-      Promise.all(licensePromises)
-        .then(() => {
-          logger.info('Finished filtering dependencies') // Object.values needs at least version 8 of node
-          const dependenciesArray = Object.values(dependencies)
-          fileManager.writeBuildFile('only-dependencies.json', JSON.stringify(dependenciesArray))
-          resolve({ pkg: data.package, dependencies: dependenciesArray })
-        })
-        .catch(err => {
-          logger.error('Error getting licenses')
-          reject(err)
-        })
+      resolve({ pkg: data.package, dependencies: Object.values(dependencies) })
     })
   })
 }
@@ -68,7 +53,7 @@ export default function getDependencies (invalidLicenses) {
  * @param {Object} dependencies object to store all dependencies
  * @param {Object} module module to search for dependencies to insert hierarchy
 */
-function insertHierarchies (dependencies, licensePromises, invalidLicenses, {currentDependency, rptDependency, rootDependencies}) {
+function insertHierarchies (dependencies, {currentDependency, rptDependency, rootDependencies}) {
   const children = rptDependency.children
   const modules = rptDependency.package.dependencies
 
@@ -88,8 +73,6 @@ function insertHierarchies (dependencies, licensePromises, invalidLicenses, {cur
     }
     currentDependency.insertChild(childPkg.name, childVersion)
     dependency.insertPrivateVersion(childVersion)
-
-    licensePromises.push(licenseManager(dependency, rptDependency.package, invalidLicenses))
   }
 
   for (let moduleName in modules) {
