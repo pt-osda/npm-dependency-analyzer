@@ -23,6 +23,13 @@ const getRequest = body => {
   })
 }
 
+/**
+ * Generates the Report Object
+ * @param {Object} policyData information in the policy file
+ * @param {Object} pkg the package related information of the project
+ * @param {Array} dependencies the project dependencies
+ * @param {Object} error object holding error about the vulnerabilities fetch
+ */
 function generateReport (policyData, pkg, dependencies, error) {
   const reportOptions = {
     id: policyData.project_id,
@@ -47,7 +54,8 @@ function generateReport (policyData, pkg, dependencies, error) {
 }
 
 /**
- * Analyzes license and vulnerabilities from all dependencies
+ * Main function for the plugin. Handles the calls to every needed part.
+ * @param {Object} policyData information in the policy file
  */
 export default async function (policyData) {
   logger.info('Started process')

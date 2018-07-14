@@ -23,8 +23,9 @@ const getRequest = (body, cacheTime) => {
 }
 
 /**
- * Gets all vulnerabilities on the current project
- * Need to do POST and send all packages because sending a request for each dependency breaks the server for a bit
+ * * Gets all vulnerabilities on the current project
+ * @param {Array} dependencies array of dependencies
+ * @param {Number} cacheTime time for the cache in the proxy
  */
 export default async function getVulnerabilities (dependencies, cacheTime) {
   logger.info('Fetching vulnerabilities')

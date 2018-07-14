@@ -5,6 +5,10 @@ import lodash from 'lodash'
 import {checkParams} from './utils/utility-functions'
 
 export class Report {
+  /**
+   * nitializes all properties that cannot be null (are arrays) and verifies required properties
+   * @param {*} options object that holds all necessary infomation for a report
+   */
   constructor (options) {
     checkParams('Report', ['id', 'name', 'version', 'description', 'timestamp', 'admin'], options)
     Object.assign(this, options)
@@ -25,8 +29,8 @@ export class Report {
  */
 export class Dependency {
   /**
-   * Constructor for a Dependency. Initializes all properties that cannot be null (are arrays) and verifies required properties
-   * @param {Object} options This object can have 0 to 2 properties, them being title and main_version
+   * Initializes all properties that cannot be null (are arrays) and verifies required properties
+   * @param {Object} options object that holds all necessary infomation for a dependency
    */
   constructor (options) {
     if (options) {
@@ -64,13 +68,15 @@ export class Dependency {
   }
 
   insertLicense (license) {
-    if (!this.licenses.some(elem => elem.spdx_id === license.spdx_id)) {
-      this.licenses.push(license)
-    }
+    this.licenses.push(license)
   }
 }
 
 export class Vulnerability {
+  /**
+   * Initializes all properties that cannot be null (are arrays) and verifies required properties
+   * @param {Object} options object that holds all necessary infomation for a vulnerability
+   */
   constructor (options) {
     if (options) {
       checkParams('Vulnerability', ['id', 'title', 'description', 'references', 'versions'], options)
@@ -80,6 +86,11 @@ export class Vulnerability {
 }
 
 export class License {
+  /**
+   * Initializes all properties of a license
+   * @param {Object} title the title of the license
+   * @param {Object} origin the origin of the license
+   */
   constructor (title, origin) {
     this.spdx_id = title
     this.source = origin
