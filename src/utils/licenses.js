@@ -55,15 +55,15 @@ function insertLicenseinDependency (dependency, depAndVersion, license, invalidL
 export default function getLicenses (dependencies, invalidLicenses) {
   logger.info('Fetching licenses')
   return new Promise((resolve, reject) => {
-    licenseChecker.init({start: './'}, (err, data) => {
+    licenseChecker.init({start: './'}, (err, allLicenses) => {
       if (err) {
         reject(err)
       } else {
-        const keys = Object.keys(data)
+        const licenseKeys = Object.keys(allLicenses)
         dependencies.forEach(element => {
-          const dataNames = keys.filter(e => e.split('@')[0] === element.title)
-          dataNames.forEach(e => {
-            const license = data[e].licenses
+          const licenses = licenseKeys.filter(licenseKey => licenseKey.split('@')[0] === element.title)
+          licenses.forEach(e => {
+            const license = allLicenses[e].licenses
             if (license) {
               insertLicenseinDependency(element, e, license, invalidLicenses)
             }

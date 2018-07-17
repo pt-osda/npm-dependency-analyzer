@@ -9,7 +9,6 @@ const logger = bunyan.createLogger({name: 'Fetch-Dependencies'})
 
 /**
  * Gets all dependencies and builds an object after filtering into a ReportDependency
- * @param {Function} cb callback called when an error occurs or after filtering all dependencies
 */
 export default function getDependencies () {
   logger.info('Fetching dependencies')
@@ -51,7 +50,9 @@ export default function getDependencies () {
 /**
  * Inserts all hierarchies of the received module. All the ones that it depends on are inserted in the property hierarchy with a new value
  * @param {Object} dependencies object to store all dependencies
- * @param {Object} module module to search for dependencies to insert hierarchy
+ * @param {Object} relatedDependencies object that holds the current report dependency object,
+ *                                      its equivalent returned by the read-package-tree module and
+ *                                      an array of all dependencies installed in the root node_modules folder
 */
 function insertHierarchies (dependencies, {currentDependency, rptDependency, rootDependencies}) {
   const children = rptDependency.children

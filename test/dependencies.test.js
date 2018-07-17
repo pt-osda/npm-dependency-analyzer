@@ -1,5 +1,5 @@
 import getDependencies from '../lib/utils/dependencies'
-import catchifyPromise from '../lib/utils/utility-functions'
+import {catchifyPromise} from '../lib/utils/utility-functions'
 
 test('check-dependencies-elements', async (done) => {
   expect.assertions(4)
