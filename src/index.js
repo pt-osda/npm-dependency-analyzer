@@ -51,6 +51,9 @@ function generateReport (policyData, pkg, dependencies, error) {
   const report = new Report(reportOptions)
   report.insertDependencies(dependencies)
 
+  report.successful_build = !policyData.fail || (policyData.fail === true &&
+    !report.dependencies.some(dependency => dependency.vulnerabilities_count > 0))
+
   writeFile('report.json', JSON.stringify(report))
   logger.info('Generated report')
 
@@ -92,10 +95,10 @@ export default async function (policyData) {
     logger.error(`Report API request ended unsuccessfully. Status code: ${response.status}`)
   }
 
-  if (policyData.fail === true && report.dependencies.some(elem => elem.vulnerabilities_count > 0)) {
+  if (report.successful_build) {
+    logger.info('Process ended successfully')
+  } else {
     logger.error('Process ended unsuccessfully')
     throw new Error('Project has vulnerabilities and has fail property on policy as true')
-  } else {
-    logger.info('Process ended successfully')
   }
 }

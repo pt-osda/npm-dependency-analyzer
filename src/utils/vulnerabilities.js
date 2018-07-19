@@ -51,6 +51,11 @@ export default async function getVulnerabilities (dependencies, cacheTime) {
     throw new Error(fetchError)
   }
 
+  if (response.status === 401) {
+    logger.warn('Vulnerabilities Request failed: Status - %s; Reason - Invalid Token', response.status)
+    throw new Error('Token is invalid')
+  }
+
   const [jsonError, body] = await catchifyPromise(response.json())
 
   if (response.status !== 200) {
